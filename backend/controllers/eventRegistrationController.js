@@ -1,7 +1,7 @@
 const Event = require("../models/event");
 const EventRegistration = require("../models/eventRegistration");
 const EventWaitlist = require("../models/eventWaitlist");
-const User = require("../models/User");
+const User = require("../models/user");
 const {
   sendRegistrationEmail,
   sendWaitingEmail,

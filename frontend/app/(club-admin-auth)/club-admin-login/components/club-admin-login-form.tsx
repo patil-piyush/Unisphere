@@ -1,5 +1,6 @@
 "use client"
 
+import Link from "next/link"
 import { useState } from "react"
 import { useRouter } from "next/navigation"
 import { Eye, EyeOff, Mail, Lock, ArrowRight, Users } from "lucide-react"
@@ -177,7 +178,7 @@ export function ClubAdminLoginForm() {
 
         {/* Support Info */}
         <div className="p-3 bg-secondary/50 rounded-lg text-center text-xs text-muted-foreground">
-          Not a club admin? <button className="text-accent hover:underline font-semibold">Back to student login</button>
+          Not a club admin? <Link href="/login" className="text-accent hover:underline font-semibold">Back to student login</Link>
         </div>
       </div>
 

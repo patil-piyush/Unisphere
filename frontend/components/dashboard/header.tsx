@@ -1,22 +1,50 @@
 "use client"
 
+import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
-import { 
-  DropdownMenu, 
-  DropdownMenuContent, 
-  DropdownMenuItem, 
-  DropdownMenuTrigger 
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { Menu, LogOut, Settings } from "lucide-react"
 import { ThemeToggle } from "@/components/theme-toggle"
+
+const BACKEND_API_URL = process.env.NEXT_PUBLIC_BACKEND_API_URL
 
 interface DashboardHeaderProps {
   onMenuClick: () => void
 }
 
 export function DashboardHeader({ onMenuClick }: DashboardHeaderProps) {
+  const router = useRouter()
+
+  const handleLogout = async () => {
+    try {
+      if (!BACKEND_API_URL) {
+        console.error("NEXT_PUBLIC_BACKEND_API_URL is not set")
+      } else {
+        const res = await fetch(`${BACKEND_API_URL}/api/users/logout`, {
+          method: "POST",
+          credentials: "include", // send token cookie
+        })
+
+        if (!res.ok) {
+          const text = await res.text()
+          console.error("Logout failed:", res.status, text)
+        }
+      }
+    } catch (err) {
+      console.error("Logout error:", err)
+    } finally {
+      // Regardless of API result, move user out of dashboard
+      router.push("/")
+    }
+  }
+
   return (
-    <div 
+    <div
       className="flex items-center justify-between px-6 py-4"
       suppressHydrationWarning
     >
@@ -45,13 +73,16 @@ export function DashboardHeader({ onMenuClick }: DashboardHeaderProps) {
               <Settings className="w-5 h-5" />
             </Button>
           </DropdownMenuTrigger>
-          <DropdownMenuContent 
+          <DropdownMenuContent
             align="end"
             suppressHydrationWarning
           >
             <DropdownMenuItem>Profile</DropdownMenuItem>
             <DropdownMenuItem>Settings</DropdownMenuItem>
-            <DropdownMenuItem className="text-red-600">
+            <DropdownMenuItem
+              className="text-red-600"
+              onClick={handleLogout}
+            >
               <LogOut className="mr-2 h-4 w-4" />
               Logout
             </DropdownMenuItem>

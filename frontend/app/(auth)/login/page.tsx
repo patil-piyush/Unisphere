@@ -8,21 +8,63 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { ThemeToggle } from "@/components/theme-toggle"
+const BACKEND_API_URL = process.env.NEXT_PUBLIC_BACKEND_API_URL!;
 
 export default function LoginPage() {
   const router = useRouter()
   const [showPassword, setShowPassword] = useState(false)
-  const [isLoading, setIsLoading] = useState(false)
+  const [error, setError] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
 
-  const handleSubmit = async (e) => {
-    e.preventDefault()
-    setIsLoading(true)
-    // Simulate login
-    await new Promise((resolve) => setTimeout(resolve, 1000))
-    router.push("/dashboard")
-  }
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError("");
+    setIsLoading(true);
+
+    try {
+      const res = await fetch(`${BACKEND_API_URL}/api/users/login`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        credentials: "include",
+        body: JSON.stringify({ email, password }),
+      });
+
+      if (!res.ok) {
+        // Read raw text once
+        const text = await res.text();
+        console.error("Login failed. Status:", res.status, "Body:", text);
+
+        let message = "Login failed. Please try again.";
+
+        // Try to parse JSON only if it looks like JSON
+        if (text && text.trim().startsWith("{")) {
+          try {
+            const data = JSON.parse(text);
+            if (data?.message) message = data.message;
+          } catch {
+            // ignore parse error, keep default message
+          }
+        } else if (res.status === 404) {
+          message = "Login endpoint not found (404). Check API URL/route.";
+        }
+
+        throw new Error(message);
+      }
+
+      // Success: backend set JWT in cookies
+      router.push("/dashboard");
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Login failed. Please try again.");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+
 
   return (
     <div className="min-h-screen flex items-center justify-center p-4 relative overflow-hidden">
@@ -117,6 +159,13 @@ export default function LoginPage() {
               {"Don't have an account? "}
               <Link href="/register" className="text-primary font-medium hover:underline">
                 Sign up
+              </Link>
+            </p>
+
+            <p className="mt-2 text-sm text-muted-foreground">
+              Are you a club admin?{" "}
+              <Link href="/club-admin-login" className="text-primary font-medium hover:underline">
+                Switch to club admin login
               </Link>
             </p>
           </div>

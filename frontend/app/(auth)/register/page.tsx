@@ -11,6 +11,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { ThemeToggle } from "@/components/theme-toggle"
 import { cn } from "@/lib/utils"
 
+const BACKEND_API_URL = process.env.NEXT_PUBLIC_BACKEND_API_URL
+
 const passwordRequirements = [
   { regex: /.{8,}/, label: "At least 8 characters" },
   { regex: /[A-Z]/, label: "One uppercase letter" },
@@ -22,28 +24,78 @@ export default function RegisterPage() {
   const router = useRouter()
   const [showPassword, setShowPassword] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+
   const [formData, setFormData] = useState({
     name: "",
     email: "",
-    collegeId: "",
+    PRN: "",
+    college_Name: "",
     department: "",
+    year_of_study: "",
+    interest: "",
     password: "",
   })
 
-  const handleSubmit = async (e) => {
-    e.preventDefault()
-    setIsLoading(true)
-    await new Promise((resolve) => setTimeout(resolve, 1000))
-    router.push("/dashboard")
-  }
-
-  const updateForm = (field, value) => {
+  const updateForm = (field: keyof typeof formData, value: string) => {
     setFormData((prev) => ({ ...prev, [field]: value }))
   }
 
   const getPasswordStrength = () => {
     const passed = passwordRequirements.filter((req) => req.regex.test(formData.password)).length
     return passed
+  }
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setError(null)
+
+    if (!BACKEND_API_URL) {
+      setError("Client is misconfigured. BACKEND_API_URL is missing.")
+      return
+    }
+
+    setIsLoading(true)
+    try {
+      const res = await fetch(`${BACKEND_API_URL}/api/users/register`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        // registration usually doesn’t need cookies, so no credentials here
+        body: JSON.stringify({
+          name: formData.name,
+          email: formData.email,
+          PRN: formData.PRN,
+          password: formData.password,
+          college_Name: formData.college_Name,
+          department: formData.department,
+          year_of_study: formData.year_of_study,
+          interest: formData.interest,
+        }),
+      })
+
+      if (!res.ok) {
+        const text = await res.text()
+        let message = "Registration failed. Please try again."
+        if (text && text.trim().startsWith("{")) {
+          try {
+            const data = JSON.parse(text)
+            if (data?.message) message = data.message
+          } catch {
+            /* ignore parse error */
+          }
+        } else if (res.status === 404) {
+          message = "Registration endpoint not found. Check backend URL."
+        }
+        throw new Error(message)
+      }
+
+      // success → go to login page
+      router.push("/login")
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Registration failed. Please try again.")
+    } finally {
+      setIsLoading(false)
+    }
   }
 
   return (
@@ -73,7 +125,14 @@ export default function RegisterPage() {
             <p className="text-muted-foreground">Join your college event community</p>
           </div>
 
+          {error && (
+            <div className="mb-4 text-sm text-destructive bg-destructive/10 border border-destructive/30 rounded-md px-3 py-2">
+              {error}
+            </div>
+          )}
+
           <form onSubmit={handleSubmit} className="space-y-5">
+            {/* Name */}
             <div className="space-y-2">
               <Label htmlFor="name">Full Name</Label>
               <div className="relative">
@@ -90,6 +149,7 @@ export default function RegisterPage() {
               </div>
             </div>
 
+            {/* Email */}
             <div className="space-y-2">
               <Label htmlFor="email">College Email</Label>
               <div className="relative">
@@ -106,31 +166,52 @@ export default function RegisterPage() {
               </div>
             </div>
 
+            {/* PRN + College Name */}
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="collegeId">College ID</Label>
+                <Label htmlFor="prn">PRN</Label>
                 <div className="relative">
                   <IdCard className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
                   <Input
-                    id="collegeId"
+                    id="prn"
                     type="text"
-                    placeholder="CS2024001"
+                    placeholder="PRN / Roll No."
                     className="pl-10 h-12"
-                    value={formData.collegeId}
-                    onChange={(e) => updateForm("collegeId", e.target.value)}
+                    value={formData.PRN}
+                    onChange={(e) => updateForm("PRN", e.target.value)}
                     required
                   />
                 </div>
               </div>
 
               <div className="space-y-2">
+                <Label htmlFor="collegeName">College Name</Label>
+                <Input
+                  id="collegeName"
+                  type="text"
+                  placeholder="PCCOE, Pune"
+                  className="h-12"
+                  value={formData.college_Name}
+                  onChange={(e) => updateForm("college_Name", e.target.value)}
+                  required
+                />
+              </div>
+            </div>
+
+            {/* Department + Year of Study */}
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
                 <Label htmlFor="department">Department</Label>
-                <Select value={formData.department} onValueChange={(value) => updateForm("department", value)}>
+                <Select
+                  value={formData.department}
+                  onValueChange={(value) => updateForm("department", value)}
+                >
                   <SelectTrigger className="h-12">
                     <SelectValue placeholder="Select" />
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="cs">Computer Science</SelectItem>
+                    <SelectItem value="it">Information Technology</SelectItem>
                     <SelectItem value="ee">Electrical Eng.</SelectItem>
                     <SelectItem value="me">Mechanical Eng.</SelectItem>
                     <SelectItem value="ce">Civil Eng.</SelectItem>
@@ -139,8 +220,41 @@ export default function RegisterPage() {
                   </SelectContent>
                 </Select>
               </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="year">Year of Study</Label>
+                <Select
+                  value={formData.year_of_study}
+                  onValueChange={(value) => updateForm("year_of_study", value)}
+                >
+                  <SelectTrigger className="h-12">
+                    <SelectValue placeholder="Select" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="1">First Year</SelectItem>
+                    <SelectItem value="2">Second Year</SelectItem>
+                    <SelectItem value="3">Third Year</SelectItem>
+                    <SelectItem value="4">Fourth Year</SelectItem>
+                    <SelectItem value="5">Other</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
             </div>
 
+            {/* Interests */}
+            <div className="space-y-2">
+              <Label htmlFor="interest">Interests</Label>
+              <Input
+                id="interest"
+                type="text"
+                placeholder="Hackathons, robotics, cultural events..."
+                className="h-12"
+                value={formData.interest}
+                onChange={(e) => updateForm("interest", e.target.value)}
+              />
+            </div>
+
+            {/* Password + strength */}
             <div className="space-y-2">
               <Label htmlFor="password">Password</Label>
               <div className="relative">
@@ -175,8 +289,8 @@ export default function RegisterPage() {
                             ? level <= 2
                               ? "bg-destructive"
                               : level === 3
-                                ? "bg-accent"
-                                : "bg-green-500"
+                              ? "bg-accent"
+                              : "bg-green-500"
                             : "bg-muted",
                         )}
                       />
@@ -192,7 +306,9 @@ export default function RegisterPage() {
                         )}
                         <span
                           className={cn(
-                            req.regex.test(formData.password) ? "text-foreground" : "text-muted-foreground",
+                            req.regex.test(formData.password)
+                              ? "text-foreground"
+                              : "text-muted-foreground",
                           )}
                         >
                           {req.label}
@@ -221,7 +337,7 @@ export default function RegisterPage() {
 
           <div className="mt-6 text-center">
             <p className="text-muted-foreground">
-              Already have an account?{" "}
+              Already have an account{" "}
               <Link href="/login" className="text-primary font-medium hover:underline">
                 Sign in
               </Link>
