@@ -1,6 +1,8 @@
 "use client"
 
 import Link from "next/link"
+const BACKEND_API_URL = process.env.NEXT_PUBLIC_BACKEND_API_URL!
+import { useRouter } from "next/navigation"
 import { usePathname } from "next/navigation"
 import {
   LayoutDashboard,
@@ -51,8 +53,22 @@ const superAdminLinks = [
 export function DashboardSidebar({ role = "student" }) {
   const pathname = usePathname()
   const [isCollapsed, setIsCollapsed] = useState(false)
+  const router = useRouter()
 
   const links = role === "super-admin" ? superAdminLinks : role === "club-admin" ? clubAdminLinks : studentLinks
+
+  const handleLogout = async () => {
+    try {
+      await fetch(`${BACKEND_API_URL}/api/users/logout`, {
+        method: "POST",
+        credentials: "include", // send cookies so backend can clear them
+      })
+    } catch {
+      // ignore errors, still redirect
+    } finally {
+      router.replace("/") // landing page
+    }
+  }
 
   return (
     <aside
@@ -103,7 +119,10 @@ export function DashboardSidebar({ role = "student" }) {
           <Settings className="h-5 w-5 shrink-0" />
           {!isCollapsed && <span className="font-medium">Settings</span>}
         </Link>
-        <button className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sidebar-foreground hover:bg-destructive/10 hover:text-destructive transition-colors w-full">
+        <button
+          onClick={handleLogout}
+          className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sidebar-foreground hover:bg-destructive/10 hover:text-destructive transition-colors w-full"
+        >
           <LogOut className="h-5 w-5 shrink-0" />
           {!isCollapsed && <span className="font-medium">Logout</span>}
         </button>

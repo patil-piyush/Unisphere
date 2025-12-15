@@ -21,6 +21,7 @@ interface EventCardProps {
   maxAttendees: number
   price?: number
   isRegistered?: boolean
+  isAdmin?: boolean
 }
 
 export function EventCard({
@@ -37,6 +38,7 @@ export function EventCard({
   maxAttendees,
   price = 0,
   isRegistered = false,
+  isAdmin = false,
 }: EventCardProps) {
   const isFull = attendees >= maxAttendees
   const spotsLeft = maxAttendees - attendees
@@ -95,11 +97,17 @@ export function EventCard({
               {isFull ? "Full" : `${spotsLeft} spots left`}
             </span>
           </div>
-          <Link href={`/dashboard/events/${id}`}>
-            <Button size="sm" variant={isRegistered ? "secondary" : "default"}>
-              {isRegistered ? "View Details" : "Register"}
-            </Button>
-          </Link>
+          {isAdmin ? (
+            <Badge className="bg-background/90 backdrop-blur-sm text-sm">
+              {attendees} / {maxAttendees} Attendees
+            </Badge>
+          ) : (
+            <Link href={`/dashboard/events/${id}`}>
+              <Button size="sm" variant={isRegistered ? "secondary" : "default"}>
+                {isRegistered ? "View Details" : "Register"}
+              </Button>
+            </Link>
+          )}
         </div>
       </div>
     </div>
