@@ -39,6 +39,9 @@ const userSchema = new mongoose.Schema({
         type: String,
         enum: ['student', 'clubMember', 'admin'],
         default: 'student'
+    },
+    aboutMe: {
+        type: String
     }
 }, { timestamps: true });
 

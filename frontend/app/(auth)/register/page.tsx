@@ -210,12 +210,14 @@ export default function RegisterPage() {
                     <SelectValue placeholder="Select" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="cs">Computer Science</SelectItem>
-                    <SelectItem value="it">Information Technology</SelectItem>
-                    <SelectItem value="ee">Electrical Eng.</SelectItem>
-                    <SelectItem value="me">Mechanical Eng.</SelectItem>
-                    <SelectItem value="ce">Civil Eng.</SelectItem>
-                    <SelectItem value="ba">Business Admin</SelectItem>
+                    <SelectItem value="Computer Engineering">Computer Engineering</SelectItem>
+                    <SelectItem value="Computer Engineering Regional">Computer Engineering Regional</SelectItem>
+                    <SelectItem value="Artificial Intelligence & Machine Learning">AIML</SelectItem>
+                    <SelectItem value="Information Technology">Information Technology</SelectItem>
+                    <SelectItem value="Electrical Engineering">Electrical Eng.</SelectItem>
+                    <SelectItem value="Electronics & TeleCommunication">E&TC</SelectItem>
+                    <SelectItem value="Mechanical Engineering">Mechanical Eng.</SelectItem>
+                    <SelectItem value="Civil Engineering">Civil Eng.</SelectItem>
                     <SelectItem value="other">Other</SelectItem>
                   </SelectContent>
                 </Select>
@@ -231,11 +233,11 @@ export default function RegisterPage() {
                     <SelectValue placeholder="Select" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="1">First Year</SelectItem>
-                    <SelectItem value="2">Second Year</SelectItem>
-                    <SelectItem value="3">Third Year</SelectItem>
-                    <SelectItem value="4">Fourth Year</SelectItem>
-                    <SelectItem value="5">Other</SelectItem>
+                    <SelectItem value="1st">First Year</SelectItem>
+                    <SelectItem value="2nd">Second Year</SelectItem>
+                    <SelectItem value="3rd">Third Year</SelectItem>
+                    <SelectItem value="4th">Fourth Year</SelectItem>
+                    <SelectItem value="5th">Other</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
