@@ -1,6 +1,10 @@
 const mongoose = require('mongoose');
 
 const clubMemberSchema = new mongoose.Schema({
+  name: {
+    type: String,
+    default: ""
+  },
   club_id: {
     type: mongoose.Schema.Types.ObjectId,
     ref: "Club",

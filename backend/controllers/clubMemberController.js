@@ -6,16 +6,20 @@ const jwt = require("jsonwebtoken");
 // Club adds member
 const addClubMember = async (req, res) => {
   try {
-    const { email } = req.body;
-    const club_id = req.clubId;
+    const { name, email, role } = req.body;
+    const clubId = req.clubId;  
 
+    if (!clubId) {
+      return res.status(401).json({ message: "Club ID not found on request" });
+    }
     const exists = await ClubMember.findOne({ email });
     if (exists) return res.status(400).json({ message: "Member already exists" });
 
     const member = await ClubMember.create({
+      name,
       email,
-      club_id,
-      role: "member"
+      club_id:clubId,
+      role: role || "member"
     });
 
     res.status(201).json({ message: "Member added successfully", member });
@@ -63,10 +67,26 @@ const loginClubMember = async (req, res) => {
   }
 };
 
+// // Get all members of logged-in club
+// const getClubMembers = async (req, res) => {
+//   try {
+//     const { clubId } = req.params;
+//     const members = await ClubMember.find({ club_id: clubId });
+//     res.status(200).json(members);
+//   } catch (error) {
+//     res.status(400).json({ error: error.message });
+//   }
+// };
+
 // Get all members of logged-in club
 const getClubMembers = async (req, res) => {
   try {
-    const { clubId } = req.params;
+    const clubId = req.clubId;  
+
+    if (!clubId) {
+      return res.status(401).json({ message: "Club ID not found on request" });
+    }
+
     const members = await ClubMember.find({ club_id: clubId });
     res.status(200).json(members);
   } catch (error) {
@@ -78,7 +98,12 @@ const getClubMembers = async (req, res) => {
 const removeClubMember = async (req, res) => {
   try {
 
-    const { clubId, memberId } = req.params;
+    const { memberId } = req.params;
+    const clubId = req.clubId;  
+
+    if (!clubId) {
+      return res.status(401).json({ message: "Club ID not found on request" });
+    }
 
     const member = await ClubMember.findOneAndDelete({
       _id: memberId,

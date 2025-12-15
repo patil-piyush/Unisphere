@@ -1,6 +1,7 @@
 const express = require("express");
 const router = express.Router();
 const clubAuth = require("../middlewares/clubAuthMiddleware");
+const upload = require("../middlewares/upload");
 const {
   createEvent,
   updateEvent,
@@ -22,7 +23,7 @@ router.get("/club/myevents", clubAuth, getClubEvents);
 router.get("/:id/registrations", clubAuth, getEventRegistrations);
 
 // Modify create after
-router.post("/", clubAuth, createEvent);
+router.post("/", upload.single("banner"), clubAuth, createEvent);
 router.put("/:id", clubAuth, updateEvent);
 router.delete("/:id", clubAuth, deleteEvent);
 router.put("/:id/close", clubAuth, closeRegistration);

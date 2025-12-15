@@ -12,7 +12,7 @@ const eventSchema = new mongoose.Schema({
     },
     description: {
         type: String,
-        required: true, 
+        required: true,
     },
     bannerURL: {
         type: String,
@@ -20,15 +20,11 @@ const eventSchema = new mongoose.Schema({
     category: {
         type: String,
         enum: ['Workshop', 'Seminar', 'Social', 'Competition', 'Other'],
-        default: 'Seminar'
+        default: 'Seminar',
     },
     tag: {
         type: [String],
-        default: []
-    },
-    date: {
-        type: Date,
-        required: true,
+        default: [],
     },
     venue: {
         type: String,
@@ -38,11 +34,15 @@ const eventSchema = new mongoose.Schema({
         type: String,
         required: true,
     },
+    start_date: {
+        type: Date,
+        required: true,
+    },
     end_time: {
         type: String,
         required: true,
     },
-    deadline: {
+    end_date: {
         type: Date,
         required: true,
     },
@@ -68,7 +68,7 @@ const eventSchema = new mongoose.Schema({
     isClosed: {
         type: Boolean,
         default: false,
-    }
+    },
 }, { timestamps: true });
 
 module.exports = mongoose.model('Event', eventSchema);

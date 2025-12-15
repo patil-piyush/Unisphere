@@ -31,8 +31,8 @@ router.put('/:id', clubAuth, updateClub);
 router.delete('/:id', clubAuth, deleteClub);
 
 // Club management by club
-router.post('/member/:clubId', clubAuth, addClubMember);
-router.delete('/member/:clubId/:memberId', clubAuth, removeClubMember);
-router.get('/member/:clubId', clubAuth, getClubMembers);
+router.post('/addMember', clubAuth, addClubMember);
+router.delete('/delMember/:memberId', clubAuth, removeClubMember);
+router.get('/members', clubAuth, getClubMembers);
 
 module.exports = router;
