@@ -1,99 +1,15 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Search, Grid, List } from "lucide-react"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { EventCard } from "@/components/dashboard/event-card"
 import { cn } from "@/lib/utils"
+const BackendURL = process.env.NEXT_PUBLIC_BACKEND_API_URL;
+import axios from "axios";
 
-const events = [
-  {
-    id: "1",
-    title: "Tech Fest 2024",
-    description: "Annual technology festival featuring hackathons, workshops, and tech talks from industry experts.",
-    image: "/technology-festival-college-event.jpg",
-    date: "Dec 15, 2024",
-    time: "9:00 AM",
-    location: "Main Auditorium",
-    category: "Technology",
-    club: "Tech Club",
-    attendees: 180,
-    maxAttendees: 200,
-    price: 0,
-  },
-  {
-    id: "2",
-    title: "Cultural Night",
-    description: "Celebrate diversity with performances, food, and art from cultures around the world.",
-    image: "/cultural-night-college-performance.jpg",
-    date: "Dec 20, 2024",
-    time: "6:00 PM",
-    location: "Open Air Theatre",
-    category: "Cultural",
-    club: "Cultural Committee",
-    attendees: 350,
-    maxAttendees: 500,
-    price: 5,
-  },
-  {
-    id: "3",
-    title: "AI Workshop",
-    description: "Hands-on workshop on building AI applications with Python and modern frameworks.",
-    image: "/ai-workshop-students-computers.jpg",
-    date: "Dec 18, 2024",
-    time: "2:00 PM",
-    location: "Computer Lab 3",
-    category: "Workshop",
-    club: "AI Research Club",
-    attendees: 28,
-    maxAttendees: 30,
-    price: 10,
-  },
-  {
-    id: "4",
-    title: "Sports Day",
-    description: "Annual inter-department sports competition featuring cricket, football, basketball and more.",
-    image: "/college-sports-day-athletics.jpg",
-    date: "Dec 22, 2024",
-    time: "8:00 AM",
-    location: "Sports Ground",
-    category: "Sports",
-    club: "Sports Committee",
-    attendees: 200,
-    maxAttendees: 400,
-    price: 0,
-  },
-  {
-    id: "5",
-    title: "Startup Pitch Competition",
-    description: "Present your startup ideas to investors and industry mentors for feedback and funding opportunities.",
-    image: "/startup-pitch-business-presentation.jpg",
-    date: "Dec 25, 2024",
-    time: "10:00 AM",
-    location: "Business School Auditorium",
-    category: "Business",
-    club: "E-Cell",
-    attendees: 45,
-    maxAttendees: 50,
-    price: 15,
-  },
-  {
-    id: "6",
-    title: "Photography Exhibition",
-    description: "Showcase of student photography capturing campus life, nature, and creative perspectives.",
-    image: "/photography-exhibition-art-gallery.jpg",
-    date: "Dec 28, 2024",
-    time: "11:00 AM",
-    location: "Art Gallery",
-    category: "Art",
-    club: "Photography Club",
-    attendees: 80,
-    maxAttendees: 150,
-    price: 0,
-  },
-]
 
 const categories = ["All", "Technology", "Cultural", "Workshop", "Sports", "Business", "Art"]
 
@@ -103,7 +19,47 @@ export default function EventsPage() {
   const [selectedCategory, setSelectedCategory] = useState("All")
   const [priceFilter, setPriceFilter] = useState("all")
 
-  const filteredEvents = events.filter((event) => {
+
+  type Event = {
+    _id?: string
+    id: string
+    title: string
+    description: string
+    clubName: string
+    bannerURL?: string
+    category: "Workshop" | "Seminar" | "Social" | "Competition" | "Other"
+    venue: string
+    start_time: string
+    start_date: string | Date
+    end_time: string
+    end_date: string | Date
+    max_capacity: number
+    registeredCount: number
+    isClosed?: boolean
+    price?: number            
+    isRegistered?: boolean
+    isAdmin?: boolean
+  }
+
+
+  const [eventsData, setEventsData] = useState<Event[]>([]);
+
+  useEffect(() => {
+    const fetchEvents = async () => {
+      try {
+        const response = axios.get(`${BackendURL}/api/events`);
+        const data = await response.then(res => res.data);
+        setEventsData(data);
+      } catch (error) {
+        console.error('Error fetching events:', error);
+      }
+    };
+
+    fetchEvents();
+  }, []);
+
+
+  const filteredEvents = eventsData.filter((event) => {
     const matchesSearch =
       event.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
       event.description.toLowerCase().includes(searchQuery.toLowerCase())
@@ -111,7 +67,7 @@ export default function EventsPage() {
     const matchesPrice =
       priceFilter === "all" ||
       (priceFilter === "free" && event.price === 0) ||
-      (priceFilter === "paid" && event.price > 0)
+      (priceFilter === "paid" && (event.price ?? 0) > 0)
     return matchesSearch && matchesCategory && matchesPrice
   })
 
@@ -207,7 +163,7 @@ export default function EventsPage() {
       {/* Events Grid */}
       <div className={cn("grid gap-6", viewMode === "grid" ? "md:grid-cols-2 lg:grid-cols-3" : "grid-cols-1")}>
         {filteredEvents.map((event) => (
-          <EventCard key={event.id} {...event} />
+          <EventCard key={event._id || event.id} {...{ ...event, _id: event._id || event.id }} />
         ))}
       </div>
 

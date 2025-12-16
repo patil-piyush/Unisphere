@@ -6,6 +6,10 @@ const eventSchema = new mongoose.Schema({
         ref: 'Club',
         required: true,
     },
+    clubName: {
+        type: String,
+        default: "Unknown Club",
+    },
     title: {
         type: String,
         required: true,
@@ -69,6 +73,10 @@ const eventSchema = new mongoose.Schema({
         type: Boolean,
         default: false,
     },
+    price:{
+        type: Number,
+        default: 0,
+    }
 }, { timestamps: true });
 
 module.exports = mongoose.model('Event', eventSchema);

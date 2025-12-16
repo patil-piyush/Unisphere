@@ -58,6 +58,7 @@ export default function CreateEventPage() {
     end_time: "",
     max_capacity: "",
     googleMapsUrl: "",
+    price:0,
     category: "Seminar", // matches schema default
   })
   const [bannerFile, setBannerFile] = useState<File | null>(null)
@@ -103,10 +104,9 @@ export default function CreateEventPage() {
       return
     }
 
-    const coords = extractLatLngFromMapsUrl(formData.googleMapsUrl)
+    let coords = extractLatLngFromMapsUrl(formData.googleMapsUrl)
     if (!coords) {
-      setError("Could not extract coordinates from the Google Maps URL. Please check the link.")
-      return
+      coords = { lat: 0, lng: 0 } // default to (0,0) if extraction fails
     }
 
     setIsLoading(true)
@@ -121,7 +121,7 @@ export default function CreateEventPage() {
       fd.append("end_time", formData.end_time)
       fd.append("max_capacity", String(maxCapacityNumber))
       fd.append("category", formData.category)
-
+      fd.append("price", String(formData.price))
       fd.append("location_type", "Point")
       fd.append("location_lat", String(coords.lat))
       fd.append("location_lng", String(coords.lng))
@@ -316,6 +316,20 @@ export default function CreateEventPage() {
               type="number"
               placeholder="e.g., 100"
               value={formData.max_capacity}
+              onChange={handleChange}
+              required
+            />
+          </div>
+
+          {/* Price */}
+          <div className="space-y-2">
+            <Label htmlFor="max_capacity">Fees</Label>
+            <Input
+              id="price"
+              name="price"
+              type="number"
+              placeholder="e.g., 100"
+              value={formData.price}
               onChange={handleChange}
               required
             />

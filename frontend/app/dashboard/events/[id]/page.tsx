@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import Image from "next/image"
 import Link from "next/link"
 import { useParams } from "next/navigation"
@@ -11,46 +11,9 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Input } from "@/components/ui/input"
 import { cn } from "@/lib/utils"
+import axios from "axios"
 
-const eventData = {
-  id: "1",
-  title: "Tech Fest 2024",
-  description: `Join us for the biggest technology festival of the year! Tech Fest 2024 brings together students, professionals, and industry experts for an unforgettable experience.
-
-**What to expect:**
-- Hackathon with exciting prizes
-- Workshops on AI, Web3, and Cloud Computing
-- Tech talks from industry leaders
-- Networking opportunities
-- Career fair with top tech companies
-- Fun activities and games
-
-This is your chance to learn, network, and showcase your skills. Whether you're a beginner or an expert, there's something for everyone!`,
-  image: "/technology-festival-college-event-large-banner.jpg",
-  date: "December 15, 2024",
-  time: "9:00 AM - 6:00 PM",
-  location: "Main Auditorium, Building A",
-  category: "Technology",
-  club: "Tech Club",
-  clubLogo: "/tech-club-logo.jpg",
-  attendees: 180,
-  maxAttendees: 200,
-  price: 0,
-  organizer: {
-    name: "Rahul Sharma",
-    role: "Tech Club President",
-    avatar: "/male-student-organizer.jpg",
-  },
-  schedule: [
-    { time: "9:00 AM", activity: "Registration & Breakfast" },
-    { time: "10:00 AM", activity: "Opening Ceremony" },
-    { time: "11:00 AM", activity: "Hackathon Kickoff" },
-    { time: "1:00 PM", activity: "Lunch Break" },
-    { time: "2:00 PM", activity: "Workshops (Parallel Sessions)" },
-    { time: "4:00 PM", activity: "Tech Talks" },
-    { time: "5:30 PM", activity: "Prize Distribution & Closing" },
-  ],
-}
+const BackendURL = process.env.NEXT_PUBLIC_BACKEND_API_URL || "http://localhost:5000"
 
 const discussions = [
   {
@@ -86,12 +49,121 @@ const participants = [
 ]
 
 export default function EventDetailPage() {
-  const params = useParams()
+  const params = useParams<{ id: string }>()
+  const eventId = params.id
+
+  const [eventData, setEventData] = useState<any | null>(null)
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+
   const [isRegistered, setIsRegistered] = useState(false)
-  const [isLiked, setIsLiked] = useState(false)
+  // const [isLiked, setIsLiked] = useState(false)
   const [newComment, setNewComment] = useState("")
 
-  const spotsLeft = eventData.maxAttendees - eventData.attendees
+  const [isLiked, setIsLiked] = useState(false)
+  const [isRegLoading, setIsRegLoading] = useState(false)
+
+  useEffect(() => {
+    if (!eventId) return
+
+    setLoading(true)
+    setError(null)
+
+    axios
+      .get(`${BackendURL}/api/events/${eventId}`, { withCredentials: true })
+      .then((res) => {
+        // adjust if your API returns { event: {...} }
+        setEventData(res.data)
+      })
+      .catch((err) => {
+        console.error("Failed to fetch event", err)
+        setError("Failed to load event.")
+      })
+      .finally(() => setLoading(false))
+  }, [eventId])
+
+  if (loading) {
+    return (
+      <div className="p-6">
+        <p>Loading event...</p>
+      </div>
+    )
+  }
+
+  if (error || !eventData) {
+    return (
+      <div className="p-6 space-y-4">
+        <p className="text-destructive">{error || "Event not found."}</p>
+        <Link href="/dashboard/events">
+          <Button variant="ghost">
+            <ArrowLeft className="h-4 w-4 mr-2" />
+            Back to Events
+          </Button>
+        </Link>
+      </div>
+    )
+  }
+
+  // map backend fields to UI fields
+  const mapped = {
+    id: eventData._id,
+    title: eventData.title,
+    description: eventData.description || "",
+    image: eventData.bannerURL || "/placeholder.svg",
+    date: eventData.start_date ? new Date(eventData.start_date).toLocaleDateString() : "",
+    time: `${eventData.start_time || ""} - ${eventData.end_time || ""}`,
+    location: eventData.venue || "",
+    category: eventData.category || "Seminar",
+    club: eventData.clubName || "Club",
+    clubLogo: eventData.clubLogo || "/placeholder.svg",
+    attendees: eventData.registeredCount ?? 0,
+    maxAttendees: eventData.max_capacity ?? 0,
+    price: eventData.price ?? 0,
+    organizer: {
+      name: eventData.organizerName || "Organizer",
+      role: eventData.organizerRole || "Event Organizer",
+      avatar: eventData.organizerAvatar || "/placeholder.svg",
+    },
+    schedule:
+      eventData.schedule && eventData.schedule.length > 0
+        ? eventData.schedule
+        : [
+          { time: eventData.start_time || "Start", activity: "Event starts" },
+          { time: eventData.end_time || "End", activity: "Event ends" },
+        ],
+  }
+
+  const spotsLeft = mapped.maxAttendees - mapped.attendees
+
+  async function onClickRegisterHandler(currentlyRegistered: boolean) {
+    if (!eventId) return
+    try {
+      setIsRegLoading(true)
+
+      if (currentlyRegistered) {
+        // cancel registration
+        await axios.delete(`${BackendURL}/api/event-registrations/${eventId}`, {
+          withCredentials: true,
+        })
+        setIsRegistered(false)
+        console.log("Unregistered from event")
+      } else {
+        // register
+        await axios.post(
+          `${BackendURL}/api/event-registrations/${eventId}`,
+          {},
+          { withCredentials: true }
+        )
+        setIsRegistered(true)
+        console.log("Registered for event")
+      }
+    } catch (err) {
+      console.error("Registration error", err)
+      // optionally show a toast / error state here
+    } finally {
+      setIsRegLoading(false)
+    }
+  }
 
   return (
     <div className="space-y-6">
@@ -105,27 +177,27 @@ export default function EventDetailPage() {
 
       {/* Hero Section */}
       <div className="relative h-64 md:h-80 rounded-3xl overflow-hidden">
-        <Image src={eventData.image || "/placeholder.svg"} alt={eventData.title} fill className="object-cover" />
-        <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent" />
+        <Image src={mapped.image} alt={mapped.title} fill className="object-cover" />
+        <div className="absolute inset-0 bg-linear-to-t from-black/80 via-black/40 to-transparent" />
         <div className="absolute bottom-0 left-0 right-0 p-6 md:p-8">
           <div className="flex items-center gap-2 mb-3">
-            <Badge>{eventData.category}</Badge>
-            {eventData.price === 0 ? (
+            <Badge>{mapped.category}</Badge>
+            {mapped.price === 0 ? (
               <Badge variant="secondary">Free</Badge>
             ) : (
-              <Badge className="bg-accent text-accent-foreground">${eventData.price}</Badge>
+              <Badge className="bg-accent text-accent-foreground">₹{mapped.price}</Badge>
             )}
           </div>
-          <h1 className="text-3xl md:text-4xl font-bold text-white mb-2">{eventData.title}</h1>
+          <h1 className="text-3xl md:text-4xl font-bold text-white mb-2">{mapped.title}</h1>
           <div className="flex items-center gap-3 text-white/80">
             <Image
-              src={eventData.clubLogo || "/placeholder.svg"}
-              alt={eventData.club}
+              src={mapped.clubLogo || "/placeholder.svg"}
+              alt={mapped.club}
               width={24}
               height={24}
               className="rounded-md"
             />
-            <span>{eventData.club}</span>
+            <span>{mapped.club}</span>
           </div>
         </div>
       </div>
@@ -145,7 +217,7 @@ export default function EventDetailPage() {
               <div className="glass rounded-2xl p-6">
                 <h2 className="text-xl font-semibold mb-4">About This Event</h2>
                 <div className="prose prose-sm dark:prose-invert max-w-none">
-                  {eventData.description.split("\n").map((line, i) => (
+                  {mapped.description.split("\n").map((line: string, i: number) => (
                     <p key={i} className="text-muted-foreground">
                       {line.startsWith("**") ? (
                         <strong className="text-foreground">{line.replace(/\*\*/g, "")}</strong>
@@ -163,9 +235,9 @@ export default function EventDetailPage() {
               <div className="glass rounded-2xl p-6">
                 <h2 className="text-xl font-semibold mb-4">Event Schedule</h2>
                 <div className="space-y-4">
-                  {eventData.schedule.map((item, index) => (
+                  {mapped.schedule.map((item: any, index: number) => (
                     <div key={index} className="flex items-start gap-4">
-                      <div className="w-20 flex-shrink-0">
+                      <div className="w-20 shrink-0">
                         <span className="text-sm font-medium text-primary">{item.time}</span>
                       </div>
                       <div className="flex-1 pb-4 border-b border-border last:border-0 last:pb-0">
@@ -181,17 +253,17 @@ export default function EventDetailPage() {
                 <h2 className="text-xl font-semibold mb-4">Organizer</h2>
                 <div className="flex items-center gap-4">
                   <Avatar className="h-14 w-14">
-                    <AvatarImage src={eventData.organizer.avatar || "/placeholder.svg"} />
+                    <AvatarImage src={mapped.organizer.avatar || "/placeholder.svg"} />
                     <AvatarFallback>
-                      {eventData.organizer.name
+                      {mapped.organizer.name
                         .split(" ")
-                        .map((n) => n[0])
+                        .map((n: string) => n[0])
                         .join("")}
                     </AvatarFallback>
                   </Avatar>
                   <div>
-                    <p className="font-semibold">{eventData.organizer.name}</p>
-                    <p className="text-sm text-muted-foreground">{eventData.organizer.role}</p>
+                    <p className="font-semibold">{mapped.organizer.name}</p>
+                    <p className="text-sm text-muted-foreground">{mapped.organizer.role}</p>
                   </div>
                 </div>
               </div>
@@ -259,7 +331,7 @@ export default function EventDetailPage() {
               <div className="glass rounded-2xl p-6">
                 <div className="flex items-center justify-between mb-4">
                   <h2 className="text-xl font-semibold">Participants</h2>
-                  <Badge variant="secondary">{eventData.attendees} registered</Badge>
+                  <Badge variant="secondary">{mapped.attendees} registered</Badge>
                 </div>
                 <div className="space-y-3">
                   {participants.map((participant, index) => (
@@ -302,7 +374,7 @@ export default function EventDetailPage() {
                 </div>
                 <div>
                   <p className="text-sm text-muted-foreground">Date</p>
-                  <p className="font-medium">{eventData.date}</p>
+                  <p className="font-medium">{mapped.date}</p>
                 </div>
               </div>
               <div className="flex items-center gap-3">
@@ -311,7 +383,7 @@ export default function EventDetailPage() {
                 </div>
                 <div>
                   <p className="text-sm text-muted-foreground">Time</p>
-                  <p className="font-medium">{eventData.time}</p>
+                  <p className="font-medium">{mapped.time}</p>
                 </div>
               </div>
               <div className="flex items-center gap-3">
@@ -320,7 +392,7 @@ export default function EventDetailPage() {
                 </div>
                 <div>
                   <p className="text-sm text-muted-foreground">Location</p>
-                  <p className="font-medium">{eventData.location}</p>
+                  <p className="font-medium">{mapped.location}</p>
                 </div>
               </div>
               <div className="flex items-center gap-3">
@@ -330,18 +402,21 @@ export default function EventDetailPage() {
                 <div>
                   <p className="text-sm text-muted-foreground">Spots Left</p>
                   <p className={cn("font-medium", spotsLeft <= 10 ? "text-destructive" : "text-foreground")}>
-                    {spotsLeft} / {eventData.maxAttendees}
+                    {spotsLeft} / {mapped.maxAttendees}
                   </p>
                 </div>
               </div>
             </div>
 
-            <Button className="w-full h-12 text-lg" onClick={() => setIsRegistered(!isRegistered)}>
+            <Button className="w-full h-12 text-lg" onClick={() => {
+              setIsRegistered(!isRegistered);
+              onclick: (onClickRegisterHandler(isRegistered));
+            }}>
               {isRegistered ? "Cancel Registration" : "Register Now"}
             </Button>
 
             <div className="flex items-center justify-center gap-4 mt-4">
-              <Button
+              {/* <Button
                 variant="ghost"
                 size="sm"
                 className={cn(isLiked && "text-destructive")}
@@ -349,7 +424,7 @@ export default function EventDetailPage() {
               >
                 <Heart className={cn("h-4 w-4 mr-2", isLiked && "fill-current")} />
                 Save
-              </Button>
+              </Button> */}
               <Button variant="ghost" size="sm">
                 <Share2 className="h-4 w-4 mr-2" />
                 Share

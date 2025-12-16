@@ -5,6 +5,9 @@ const transporter = require('../config/mail')
 const cloudinary = require("../config/cloudinary");
 
 
+const Comment = require("../models/comments")
+
+
 // create a new event president only
 // const createEvent = async (req, res) => {
 //     try {
@@ -65,10 +68,12 @@ const createEvent = async (req, res) => {
       end_date,
       end_time,
       max_capacity,
-      category, // optional, defaults to 'Seminar' in schema
+      category,
       location_lat,
       location_lng,
+      price,
     } = req.body;
+
 
     // Basic validation based on schema
     if (!title || !description || !venue || !start_date || !start_time || !end_date || !end_time || !max_capacity) {
@@ -84,15 +89,20 @@ const createEvent = async (req, res) => {
     const startDateObj = new Date(start_date);
     const endDateObj = new Date(end_date);
 
+    // normalize to start of day
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const startDay = new Date(startDateObj);
+    startDay.setHours(0, 0, 0, 0);
 
-    // You probably want to compare date + time; here are simplified checks:
     if (endDateObj < startDateObj) {
       return res.status(400).json({ error: "End date must be on or after start date." });
     }
 
-    if (startDateObj < new Date()) {
-      return res.status(400).json({ error: "Event start date must be in the future" });
+    if (startDay < today) {
+      return res.status(400).json({ error: "Event start date must be today or in the future." });
     }
+
 
     // Handle coordinates
     const lat = Number(location_lat);
@@ -136,6 +146,7 @@ const createEvent = async (req, res) => {
 
     const event = await Event.create({
       club_id: req.clubId, // set by auth middleware from JWT
+      // clubName: req.clubId.name,
       title,
       description,
       bannerURL: bannerURL || undefined,
@@ -146,6 +157,7 @@ const createEvent = async (req, res) => {
       end_time,
       end_date: endDateObj,
       max_capacity: maxCapacityNum,
+      price: Number(price) || 0,
       location_coordinates: {
         type: "Point",
         coordinates: [lng, lat], // GeoJSON: [longitude, latitude]
@@ -188,29 +200,48 @@ const updateEvent = async (req, res) => {
     });
 
   } catch (error) {
-    res.status(400).json({ error: error.message });
+    console.error("Create event error:", error);
+    // If it's a Mongoose validation error, send 400 with details
+    if (error.name === "ValidationError") {
+      return res.status(400).json({
+        error: Object.values(error.errors).map((e) => e.message),
+      });
+    }
+    res.status(500).json({ error: error.message || "Failed to create event" });
   }
+
 };
 
 
 // delete event president only 
-const deleteEvent = async(req, res) => {
-    try{
-        const event = await Event.findById(req.params.id);
-        if(!event) return res.status(404).json({message:"Event Not Found"});
+const deleteEvent = async (req, res) => {
+  try {
+    const eventId = req.params.id;
+    console.log("DELETE /api/events/:id ->", eventId);
 
-        if(event.club_id.toString() != req.clubId) {
-            return res.status(403).json({ error: 'Unauthorized to delete this event' });
-        }
-
-        await EventResgistration.deleteMany({event_id: event._id});
-        await EventWaitlist.deleteMany({event_id: event._id});
-        await Comment.deleteMany({event_id: event._id});
-        await Event.findByIdAndDelete(event._id);
-        res.status(200).json({message: "Event Deleted Successfully"});
-    }catch(error){
-        res.status(500).json({error: error.message});
+    const event = await Event.findById(eventId);
+    if (!event) {
+      return res.status(404).json({ message: "Event Not Found" });
     }
+
+    // Ensure req.clubId exists and is a string
+    console.log("req.clubId =", req.clubId, "event.club_id =", event.club_id);
+    if (event.club_id.toString() !== req.clubId.toString()) {
+      return res.status(403).json({ error: "Unauthorized to delete this event" });
+    }
+
+    // Make sure these models are imported and spelled correctly
+    await EventRegistration.deleteMany({ event_id: event._id });
+    await EventWaitlist.deleteMany({ event_id: event._id });
+    await Comment.deleteMany({ event_id: event._id });
+
+    await Event.findByIdAndDelete(event._id);
+
+    return res.status(200).json({ message: "Event Deleted Successfully" });
+  } catch (error) {
+    console.error("Delete event error:", error);  // <-- see exact cause in server logs
+    return res.status(500).json({ error: error.message });
+  }
 };
 
 //close registration
@@ -227,7 +258,7 @@ const closeRegistration = async (req, res) => {
     await event.save();
 
     res.status(200).json({ message: "Event Registrations Closed" });
-    
+
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
@@ -249,39 +280,39 @@ const openRegistration = async (req, res) => {
     await event.save();
 
     res.status(200).json({ message: "Event Registrations Opened" }); // <-- FIXED MESSAGE
-    
+
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
 };
 
 // get all events 
-const getAllEvents = async(req,res) => {
-    try{
-        const events = await Event.find()
-            .populate("club_id","name logoURL")
-            .sort({start_time: 1});
+const getAllEvents = async (req, res) => {
+  try {
+    const events = await Event.find()
+      .populate("club_id", "name logoURL")
+      .sort({ start_time: 1 });
 
-        if(!events) return res.status(404).json({message: "No Events Found"});
+    if (!events) return res.status(404).json({ message: "No Events Found" });
 
-        res.status(200).json(events);
-    }catch(error){
-        res.status(500).json({error: error.message});
-    }
+    res.status(200).json(events);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
 }
 
 //get event of logged-in clubs
-const getClubEvents = async(req,res) => {
-    try{
-        const events = await Event.find({club_id: req.clubId})
-            .sort({start_time:1});
+const getClubEvents = async (req, res) => {
+  try {
+    const events = await Event.find({ club_id: req.clubId })
+      .sort({ start_time: 1 });
 
-        if(!events) return res.status(404).json({message: "No Events Found"});
+    if (!events) return res.status(404).json({ message: "No Events Found" });
 
-        res.status(200).json(events);
-    }catch(error){
-        res.status(500).json({error: error.message});
-    }
+    res.status(200).json(events);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
 }
 // get registrations of an event 
 const getEventRegistrations = async (req, res) => {
@@ -321,13 +352,13 @@ const getEventById = async (req, res) => {
 };
 
 module.exports = {
-    createEvent,
-    updateEvent,
-    deleteEvent,
-    closeRegistration,
-    openRegistration,
-    getAllEvents,
-    getClubEvents,
-    getEventRegistrations,
-    getEventById
+  createEvent,
+  updateEvent,
+  deleteEvent,
+  closeRegistration,
+  openRegistration,
+  getAllEvents,
+  getClubEvents,
+  getEventRegistrations,
+  getEventById
 }
