@@ -103,7 +103,11 @@ const deleteClub = async (req, res) => {
 const getAllClubs = async (req, res) => {
   try {
     const clubs = await Club.find().select("-password");
-    res.status(200).json(clubs);
+    const totalClubs = await Club.countDocuments();
+    res.status(200).json({
+      count: totalClubs,
+      clubs
+    });
   } catch (error) {
     res.status(400).json({ error: error.message });
   }

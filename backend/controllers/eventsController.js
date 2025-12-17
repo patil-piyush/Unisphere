@@ -352,6 +352,42 @@ const getEventById = async (req, res) => {
   }
 };
 
+const getCurrentMonthEventCount = async (req, res) => {
+  try {
+    const now = new Date();
+
+    // Start of current month
+    const startOfMonth = new Date(
+      now.getFullYear(),
+      now.getMonth(),
+      1
+    );
+
+    // Start of next month
+    const endOfMonth = new Date(
+      now.getFullYear(),
+      now.getMonth() + 1,
+      1
+    );
+
+    const count = await Event.countDocuments({
+      start_date: {
+        $gte: startOfMonth,
+        $lt: endOfMonth
+      }
+    });
+
+    res.status(200).json({
+      month: now.toLocaleString("default", { month: "long" }),
+      year: now.getFullYear(),
+      count
+    });
+
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+};
+
 module.exports = {
   createEvent,
   updateEvent,
@@ -361,5 +397,6 @@ module.exports = {
   getAllEvents,
   getClubEvents,
   getEventRegistrations,
-  getEventById
+  getEventById,
+  getCurrentMonthEventCount
 }
