@@ -29,7 +29,6 @@ export default function RegisterPage() {
   const [formData, setFormData] = useState({
     name: "",
     email: "",
-    PRN: "",
     college_Name: "",
     department: "",
     year_of_study: "",
@@ -64,7 +63,6 @@ export default function RegisterPage() {
         body: JSON.stringify({
           name: formData.name,
           email: formData.email,
-          PRN: formData.PRN,
           password: formData.password,
           college_Name: formData.college_Name,
           department: formData.department,
@@ -166,24 +164,8 @@ export default function RegisterPage() {
               </div>
             </div>
 
-            {/* PRN + College Name */}
+            {/*  College Name */}
             <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="prn">PRN</Label>
-                <div className="relative">
-                  <IdCard className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
-                  <Input
-                    id="prn"
-                    type="text"
-                    placeholder="PRN / Roll No."
-                    className="pl-10 h-12"
-                    value={formData.PRN}
-                    onChange={(e) => updateForm("PRN", e.target.value)}
-                    required
-                  />
-                </div>
-              </div>
-
               <div className="space-y-2">
                 <Label htmlFor="collegeName">College Name</Label>
                 <Input
@@ -199,7 +181,7 @@ export default function RegisterPage() {
             </div>
 
             {/* Department + Year of Study */}
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="department">Department</Label>
                 <Select
