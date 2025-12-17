@@ -67,7 +67,7 @@ const loginUser = async (req, res) => {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
       sameSite: 'strict',
-      maxAge: 7 * 24 * 60 * 60 * 1000 // 7 days 
+      maxAge:  24 * 60 * 60 * 1000 // 1 days 
     });
 
     res.status(200).json({ message: "Login successful" });
@@ -105,6 +105,10 @@ const updateUserProfile = async (req, res) => {
 
     if (typeof req.body.aboutMe === "string") {
       updates.aboutMe = req.body.aboutMe.trim();
+    }
+
+    if (typeof req.body.year_of_study === "string") {
+      updates.year_of_study = req.body.year_of_study.trim();
     }
 
     if (typeof req.body.interest === "string") {

@@ -23,7 +23,7 @@ const userSchema = new mongoose.Schema({
         required: true
     },
     year_of_study: {
-        type: Number,
+        type: String,
         required: true  
     },
     interest: {

@@ -62,6 +62,7 @@ const createEvent = async (req, res) => {
     const {
       title,
       description,
+      clubName,
       venue,
       start_date,
       start_time,
@@ -122,7 +123,7 @@ const createEvent = async (req, res) => {
           resource_type: "image",
         },
         (error, result) => {
-          if (error) throw error;
+          if (error) console.log(error);
           return result;
         }
       );
@@ -143,10 +144,10 @@ const createEvent = async (req, res) => {
         stream.end(req.file.buffer);
       });
     }
-
+    
     const event = await Event.create({
       club_id: req.clubId, // set by auth middleware from JWT
-      // clubName: req.clubId.name,
+      clubName,
       title,
       description,
       bannerURL: bannerURL || undefined,

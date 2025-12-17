@@ -4,60 +4,107 @@ import { useState, useEffect } from "react"
 import { Search, Grid, List } from "lucide-react"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
 import { EventCard } from "@/components/dashboard/event-card"
 import { cn } from "@/lib/utils"
-const BackendURL = process.env.NEXT_PUBLIC_BACKEND_API_URL;
-import axios from "axios";
+import axios from "axios"
 
+const BackendURL = process.env.NEXT_PUBLIC_BACKEND_API_URL
 
 const categories = ["All", "Technology", "Cultural", "Workshop", "Sports", "Business", "Art"]
+
+type Event = {
+  _id?: string
+  id: string
+  title: string
+  description: string
+  clubName: string
+  bannerURL?: string
+  category: "Workshop" | "Seminar" | "Social" | "Competition" | "Other"
+  venue: string
+  start_time: string
+  start_date: string | Date
+  end_time: string
+  end_date: string | Date
+  max_capacity: number
+  registeredCount: number
+  isClosed?: boolean
+  price?: number
+  isRegistered?: boolean
+  isAdmin?: boolean
+}
 
 export default function EventsPage() {
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid")
   const [searchQuery, setSearchQuery] = useState("")
   const [selectedCategory, setSelectedCategory] = useState("All")
   const [priceFilter, setPriceFilter] = useState("all")
+  const [mounted, setMounted] = useState(false)
+  const [eventsData, setEventsData] = useState<Event[]>([])
+  const [loading, setLoading] = useState(true)
 
-
-  type Event = {
-    _id?: string
-    id: string
-    title: string
-    description: string
-    clubName: string
-    bannerURL?: string
-    category: "Workshop" | "Seminar" | "Social" | "Competition" | "Other"
-    venue: string
-    start_time: string
-    start_date: string | Date
-    end_time: string
-    end_date: string | Date
-    max_capacity: number
-    registeredCount: number
-    isClosed?: boolean
-    price?: number            
-    isRegistered?: boolean
-    isAdmin?: boolean
-  }
-
-
-  const [eventsData, setEventsData] = useState<Event[]>([]);
 
   useEffect(() => {
-    const fetchEvents = async () => {
+    setMounted(true)
+  }, [])
+
+  useEffect(() => {
+    const fetchEventsAndRegistrations = async () => {
       try {
-        const response = axios.get(`${BackendURL}/api/events`);
-        const data = await response.then(res => res.data);
-        setEventsData(data);
+        setLoading(true)
+
+        // 1) Fetch all events
+        const eventsRes = await axios.get(`${BackendURL}/api/events`, {
+          withCredentials: true,
+        })
+        const events: Event[] = eventsRes.data
+
+        // 2) Fetch current user's registrations
+        const regsRes = await axios.get(`${BackendURL}/api/event-registrations/my`, {
+          withCredentials: true,
+        })
+        const regsData = Array.isArray(regsRes.data) ? regsRes.data : []
+
+        // registrations shape:
+        // [{ _id, event_id: { _id: "eventId", ... }, user_id, ... }]
+        const registeredEventIds = new Set<string>(
+          regsData
+            .map((r: any) => r?.event_id?._id)
+            .filter((id: any) => typeof id === "string")
+        )
+
+        // 3) Merge registration info into events list
+        const withFlags = events.map((e) => {
+          const eid = (e._id as string) || e.id
+          return {
+            ...e,
+            _id: eid,
+            id: eid,
+            isRegistered: registeredEventIds.has(eid),
+          }
+        })
+
+        setEventsData(withFlags)
       } catch (error) {
-        console.error('Error fetching events:', error);
+        console.error("Error fetching events or registrations:", error)
+      } finally {
+        setLoading(false)
       }
-    };
+    }
 
-    fetchEvents();
-  }, []);
+    fetchEventsAndRegistrations()
+  }, [])
 
+  if (!mounted) {
+    // optional: return a skeleton/loader instead of null
+    return null
+  }
 
   const filteredEvents = eventsData.filter((event) => {
     const matchesSearch =
@@ -75,7 +122,9 @@ export default function EventsPage() {
     <div className="space-y-6">
       <div>
         <h1 className="text-3xl font-bold">Explore Events</h1>
-        <p className="text-muted-foreground">Discover and register for upcoming campus events</p>
+        <p className="text-muted-foreground">
+          Discover and register for upcoming campus events
+        </p>
       </div>
 
       {/* Filters */}
@@ -161,13 +210,28 @@ export default function EventsPage() {
       </p>
 
       {/* Events Grid */}
-      <div className={cn("grid gap-6", viewMode === "grid" ? "md:grid-cols-2 lg:grid-cols-3" : "grid-cols-1")}>
-        {filteredEvents.map((event) => (
-          <EventCard key={event._id || event.id} {...{ ...event, _id: event._id || event.id }} />
-        ))}
-      </div>
+      {loading ? (
+        <p className="text-muted-foreground">Loading events...</p>
+      ) : (
+        <div
+          className={cn(
+            "grid gap-6",
+            viewMode === "grid" ? "md:grid-cols-2 lg:grid-cols-3" : "grid-cols-1"
+          )}
+        >
+          {filteredEvents.map((event) => (
+            <EventCard
+              key={event._id || event.id}
+              {...{
+                ...event,
+                _id: (event._id as string) || event.id,
+              }}
+            />
+          ))}
+        </div>
+      )}
 
-      {filteredEvents.length === 0 && (
+      {filteredEvents.length === 0 && !loading && (
         <div className="text-center py-12">
           <p className="text-muted-foreground">No events found matching your criteria.</p>
           <Button

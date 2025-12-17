@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
 import { ArrowLeft } from "lucide-react"
@@ -15,6 +15,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
+import axios from "axios"
+import { set } from "date-fns"
 
 const BACKEND_API_URL = process.env.NEXT_PUBLIC_BACKEND_API_URL!
 
@@ -51,6 +53,7 @@ export default function CreateEventPage() {
   const [formData, setFormData] = useState({
     title: "",
     description: "",
+    clubName: "",
     venue: "",
     start_date: "",
     start_time: "",
@@ -65,11 +68,31 @@ export default function CreateEventPage() {
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [success, setSuccess] = useState<string | null>(null)
+  const [clubName, setClubName] = useState<string | null>(null)
 
+
+  useEffect(() => {
+    const response = axios.get(`${BACKEND_API_URL}/api/clubs/`, {
+      withCredentials: true,
+    })
+    response.then((res) => {
+      const cName = res.data.name
+      // console.log("Club Name:", res.data.name)
+      setClubName(cName)
+    })
+  }, [])
+  
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target
     setFormData((prev) => ({ ...prev, [name]: value }))
+
+    if (clubName) {
+      setFormData((prev) => ({ ...prev, clubName: clubName }))
+      // console.log("Club Name in submit:", formData.clubName)
+    }
   }
+
+
 
   const handleBannerChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0] || null
@@ -81,6 +104,7 @@ export default function CreateEventPage() {
     setError(null)
     setSuccess(null)
 
+    
     if (!formData.title || !formData.description || !formData.venue) {
       setError("Please fill in title, description, and venue.")
       return
@@ -114,6 +138,7 @@ export default function CreateEventPage() {
       const fd = new FormData()
       fd.append("title", formData.title)
       fd.append("description", formData.description)
+      fd.append("clubName", formData.clubName)
       fd.append("venue", formData.venue)
       fd.append("start_date", formData.start_date)
       fd.append("start_time", formData.start_time)
@@ -371,3 +396,7 @@ export default function CreateEventPage() {
     </div>
   )
 }
+function customUseEffect(arg0: () => void, arg1: never[]) {
+  throw new Error("Function not implemented.")
+}
+

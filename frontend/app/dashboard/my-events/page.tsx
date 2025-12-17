@@ -6,6 +6,8 @@ import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Calendar, Clock, MapPin, Download, CheckCircle2, XCircle } from "lucide-react"
 import Image from "next/image"
+import Link from "next/link"
+
 
 const BACKEND_API_URL = process.env.NEXT_PUBLIC_BACKEND_API_URL
 
@@ -17,18 +19,22 @@ type ApiRegistration = {
   event_id: {
     _id: string
     title: string
-    date: string // ISO date string from backend, adjust field name if different
-    time?: string
-    location?: string
-    image?: string
+    start_date: string // ISO
+    end_date?: string   // ISO
+    start_time?: string
+    end_time?: string
+    venue?: string
+    bannerURL?: string
   }
 }
 
 type EventCard = {
   id: string
   title: string
-  date: string
-  time: string
+  startDateISO: string
+  endDateISO?: string
+  dateLabel: string
+  timeLabel: string
   location: string
   image: string
   attended?: boolean
@@ -53,7 +59,7 @@ export default function MyEventsPage() {
       try {
         const res = await fetch(`${BACKEND_API_URL}/api/event-registrations/my`, {
           method: "GET",
-          credentials: "include", // send JWT cookie
+          credentials: "include",
         })
 
         if (!res.ok) {
@@ -71,7 +77,6 @@ export default function MyEventsPage() {
         }
 
         const data: ApiRegistration[] = await res.json()
-
         const now = new Date()
 
         const upcoming: EventCard[] = []
@@ -79,31 +84,51 @@ export default function MyEventsPage() {
 
         data.forEach((reg) => {
           const ev = reg.event_id
-          if (!ev) return
+          if (!ev || !ev.start_date) return
 
-          const evDate = new Date(ev.date) // adjust if backend uses start_time etc.
+          const startDateISO = ev.start_date
+          const startDate = new Date(startDateISO)
+
+          const endDateISO = ev.end_date
+          const endDate = endDateISO ? new Date(endDateISO) : undefined
+
+          const dateLabel = startDate.toLocaleDateString()
+          const timeLabel =
+            ev.start_time && ev.end_time
+              ? `${ev.start_time} - ${ev.end_time}`
+              : ev.start_time || ""
+
           const card: EventCard = {
             id: ev._id,
             title: ev.title,
-            date: new Date(ev.date).toLocaleDateString(),
-            time: ev.time || "",
-            location: ev.location || "TBA",
-            image: ev.image || "/placeholder.svg?height=100&width=150",
+            startDateISO,
+            endDateISO,
+            dateLabel,
+            timeLabel,
+            location: ev.venue || "TBA",
+            image: ev.bannerURL || "/placeholder.svg?height=100&width=150",
             attended: reg.attended,
             certificateAvailable: reg.certificateAvailable,
             pointsEarned: reg.pointsEarned ?? 0,
           }
 
-          if (evDate >= now) {
+          // classify by start date vs now
+          if (startDate >= now) {
             upcoming.push(card)
           } else {
             past.push(card)
           }
         })
 
-        // Optional: sort upcoming ascending and past descending by date
-        upcoming.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
-        past.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
+        // sort by startDateISO (ISO string sortable)
+        upcoming.sort(
+          (a, b) =>
+            new Date(a.startDateISO).getTime() - new Date(b.startDateISO).getTime(),
+        )
+        past.sort(
+          (a, b) =>
+            new Date(b.startDateISO).getTime() - new Date(a.startDateISO).getTime(),
+        )
 
         setUpcomingEvents(upcoming)
         setPastEvents(past)
@@ -121,7 +146,9 @@ export default function MyEventsPage() {
     <div className="space-y-6">
       <div>
         <h1 className="text-3xl font-bold">My Events</h1>
-        <p className="text-muted-foreground">Manage your registered events and download certificates</p>
+        <p className="text-muted-foreground">
+          Manage your registered events and download certificates
+        </p>
       </div>
 
       {error && (
@@ -136,13 +163,17 @@ export default function MyEventsPage() {
           <TabsTrigger value="past">Past ({pastEvents.length})</TabsTrigger>
         </TabsList>
 
+        {/* Upcoming */}
         <TabsContent value="upcoming" className="mt-6">
           {loading ? (
             <div className="text-muted-foreground">Loading events...</div>
           ) : (
             <div className="space-y-4">
               {upcomingEvents.map((event) => (
-                <div key={event.id} className="glass rounded-2xl p-4 flex flex-col sm:flex-row gap-4">
+                <div
+                  key={event.id}
+                  className="glass rounded-2xl p-4 flex flex-col sm:flex-row gap-4"
+                >
                   <div className="w-full sm:w-36 h-24 rounded-xl overflow-hidden shrink-0">
                     <Image
                       src={event.image || "/placeholder.svg"}
@@ -159,12 +190,12 @@ export default function MyEventsPage() {
                         <div className="flex flex-wrap gap-3 mt-2 text-sm text-muted-foreground">
                           <span className="flex items-center gap-1">
                             <Calendar className="h-4 w-4" />
-                            {event.date}
+                            {event.dateLabel}
                           </span>
-                          {event.time && (
+                          {event.timeLabel && (
                             <span className="flex items-center gap-1">
                               <Clock className="h-4 w-4" />
-                              {event.time}
+                              {event.timeLabel}
                             </span>
                           )}
                           <span className="flex items-center gap-1">
@@ -173,15 +204,17 @@ export default function MyEventsPage() {
                           </span>
                         </div>
                       </div>
-                      <Badge variant="secondary" className="bg-green-500/10 text-green-500">
+                      <Badge
+                        variant="secondary"
+                        className="bg-green-500/10 text-green-500"
+                      >
                         Confirmed
                       </Badge>
                     </div>
                     <div className="mt-4 flex gap-2">
-                      <Button size="sm">View Details</Button>
-                      <Button size="sm" variant="outline">
-                        Cancel Registration
-                      </Button>
+                      <Link href={`/dashboard/events/${event.id}`}>
+                        <Button size="sm">View Details</Button>
+                      </Link>
                     </div>
                   </div>
                 </div>
@@ -198,13 +231,17 @@ export default function MyEventsPage() {
           )}
         </TabsContent>
 
+        {/* Past */}
         <TabsContent value="past" className="mt-6">
           {loading ? (
             <div className="text-muted-foreground">Loading events...</div>
           ) : (
             <div className="space-y-4">
               {pastEvents.map((event) => (
-                <div key={event.id} className="glass rounded-2xl p-4 flex flex-col sm:flex-row gap-4">
+                <div
+                  key={event.id}
+                  className="glass rounded-2xl p-4 flex flex-col sm:flex-row gap-4"
+                >
                   <div className="w-full sm:w-36 h-24 rounded-xl overflow-hidden shrink-0">
                     <Image
                       src={event.image || "/placeholder.svg"}
@@ -221,24 +258,30 @@ export default function MyEventsPage() {
                         <div className="flex flex-wrap gap-3 mt-2 text-sm text-muted-foreground">
                           <span className="flex items-center gap-1">
                             <Calendar className="h-4 w-4" />
-                            {event.date}
+                            {event.dateLabel}
                           </span>
-                          {event.time && (
+                          {event.timeLabel && (
                             <span className="flex items-center gap-1">
                               <Clock className="h-4 w-4" />
-                              {event.time}
+                              {event.timeLabel}
                             </span>
                           )}
                         </div>
                       </div>
                       <div className="flex items-center gap-2">
                         {event.attended ? (
-                          <Badge variant="secondary" className="bg-green-500/10 text-green-500">
+                          <Badge
+                            variant="secondary"
+                            className="bg-green-500/10 text-green-500"
+                          >
                             <CheckCircle2 className="h-3 w-3 mr-1" />
                             Attended
                           </Badge>
                         ) : (
-                          <Badge variant="secondary" className="bg-destructive/10 text-destructive">
+                          <Badge
+                            variant="secondary"
+                            className="bg-destructive/10 text-destructive"
+                          >
                             <XCircle className="h-3 w-3 mr-1" />
                             Missed
                           </Badge>
@@ -247,14 +290,20 @@ export default function MyEventsPage() {
                     </div>
                     <div className="mt-4 flex items-center justify-between">
                       <div className="flex items-center gap-4">
-                        {event.attended && event.pointsEarned != null && event.pointsEarned > 0 && (
-                          <span className="text-sm text-primary font-medium">
-                            +{event.pointsEarned} points earned
-                          </span>
-                        )}
+                        {event.attended &&
+                          event.pointsEarned != null &&
+                          event.pointsEarned > 0 && (
+                            <span className="text-sm text-primary font-medium">
+                              +{event.pointsEarned} points earned
+                            </span>
+                          )}
                       </div>
                       {event.certificateAvailable && (
-                        <Button size="sm" variant="outline" className="gap-2 bg-transparent">
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          className="gap-2 bg-transparent"
+                        >
                           <Download className="h-4 w-4" />
                           Download Certificate
                         </Button>

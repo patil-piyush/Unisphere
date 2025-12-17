@@ -4,7 +4,17 @@ import { useState, useEffect } from "react"
 import Image from "next/image"
 import Link from "next/link"
 import { useParams } from "next/navigation"
-import { Calendar, Clock, MapPin, Users, ArrowLeft, Share2, Heart, MessageCircle, Send } from "lucide-react"
+import {
+  Calendar,
+  Clock,
+  MapPin,
+  Users,
+  ArrowLeft,
+  Share2,
+  Heart,
+  MessageCircle,
+  Send,
+} from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
@@ -57,9 +67,7 @@ export default function EventDetailPage() {
   const [error, setError] = useState<string | null>(null)
 
   const [isRegistered, setIsRegistered] = useState(false)
-  // const [isLiked, setIsLiked] = useState(false)
   const [newComment, setNewComment] = useState("")
-
   const [isLiked, setIsLiked] = useState(false)
   const [isRegLoading, setIsRegLoading] = useState(false)
 
@@ -72,7 +80,6 @@ export default function EventDetailPage() {
     axios
       .get(`${BackendURL}/api/events/${eventId}`, { withCredentials: true })
       .then((res) => {
-        // adjust if your API returns { event: {...} }
         setEventData(res.data)
       })
       .catch((err) => {
@@ -80,7 +87,30 @@ export default function EventDetailPage() {
         setError("Failed to load event.")
       })
       .finally(() => setLoading(false))
+
+      axios
+      .get(`${BackendURL}/api/event-registrations/my`, { withCredentials: true })
+      .then((res) => {
+        console.log("My registrations:", res.data)
+    
+        const data = Array.isArray(res.data) ? res.data : []
+    
+        const found = data.some(
+          (r: any) =>
+            r &&
+            r.event_id &&
+            typeof r.event_id._id === "string" &&
+            r.event_id._id === eventId
+        )
+    
+        setIsRegistered(found)
+      })
+      .catch((err) => {
+        console.error("Failed to fetch registrations", err)
+      })
+    
   }, [eventId])
+
 
   if (loading) {
     return (
@@ -157,9 +187,16 @@ export default function EventDetailPage() {
         setIsRegistered(true)
         console.log("Registered for event")
       }
-    } catch (err) {
+    } catch (err: any) {
+      const status = err?.response?.status
+      if (!currentlyRegistered && status === 409) {
+        // backend says “already registered” → reflect that in UI
+        console.warn("Already registered, updating UI state")
+        setIsRegistered(true)
+        return
+      }
+
       console.error("Registration error", err)
-      // optionally show a toast / error state here
     } finally {
       setIsRegLoading(false)
     }
@@ -220,7 +257,9 @@ export default function EventDetailPage() {
                   {mapped.description.split("\n").map((line: string, i: number) => (
                     <p key={i} className="text-muted-foreground">
                       {line.startsWith("**") ? (
-                        <strong className="text-foreground">{line.replace(/\*\*/g, "")}</strong>
+                        <strong className="text-foreground">
+                          {line.replace(/\*\*/g, "")}
+                        </strong>
                       ) : line.startsWith("-") ? (
                         <span className="block ml-4">{line}</span>
                       ) : (
@@ -294,7 +333,10 @@ export default function EventDetailPage() {
                 {/* Comments */}
                 <div className="space-y-4">
                   {discussions.map((comment) => (
-                    <div key={comment.id} className={cn("flex gap-3", comment.isReply && "ml-12")}>
+                    <div
+                      key={comment.id}
+                      className={cn("flex gap-3", comment.isReply && "ml-12")}
+                    >
                       <Avatar className="h-8 w-8">
                         <AvatarImage src={comment.user.avatar || "/placeholder.svg"} />
                         <AvatarFallback>
@@ -307,7 +349,9 @@ export default function EventDetailPage() {
                       <div className="flex-1">
                         <div className="flex items-center gap-2 mb-1">
                           <span className="font-medium text-sm">{comment.user.name}</span>
-                          <span className="text-xs text-muted-foreground">{comment.time}</span>
+                          <span className="text-xs text-muted-foreground">
+                            {comment.time}
+                          </span>
                         </div>
                         <p className="text-sm text-muted-foreground">{comment.message}</p>
                         <div className="flex items-center gap-4 mt-2">
@@ -350,7 +394,9 @@ export default function EventDetailPage() {
                       </Avatar>
                       <div>
                         <p className="font-medium">{participant.name}</p>
-                        <p className="text-sm text-muted-foreground">{participant.department}</p>
+                        <p className="text-sm text-muted-foreground">
+                          {participant.department}
+                        </p>
                       </div>
                     </div>
                   ))}
@@ -401,17 +447,27 @@ export default function EventDetailPage() {
                 </div>
                 <div>
                   <p className="text-sm text-muted-foreground">Spots Left</p>
-                  <p className={cn("font-medium", spotsLeft <= 10 ? "text-destructive" : "text-foreground")}>
+                  <p
+                    className={cn(
+                      "font-medium",
+                      spotsLeft <= 10 ? "text-destructive" : "text-foreground"
+                    )}
+                  >
                     {spotsLeft} / {mapped.maxAttendees}
                   </p>
                 </div>
               </div>
             </div>
 
-            <Button className="w-full h-12 text-lg" onClick={() => {
-              setIsRegistered(!isRegistered);
-              onclick: (onClickRegisterHandler(isRegistered));
-            }}>
+            <Button
+              className={cn(
+                "w-full h-12 text-lg",
+                isRegistered &&
+                "bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              )}
+              disabled={isRegLoading}
+              onClick={() => onClickRegisterHandler(isRegistered)}
+            >
               {isRegistered ? "Cancel Registration" : "Register Now"}
             </Button>
 

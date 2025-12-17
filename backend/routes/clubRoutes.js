@@ -10,7 +10,8 @@ const {
     deleteClub,
     getAllClubs,
     changeClubPassword,
-    logoutClub
+    logoutClub,
+    getClubDetails
 } = require('../controllers/clubController');
 
 const {
@@ -29,6 +30,7 @@ router.put('/change-password', clubAuth, changeClubPassword);
 // router.get('/', clubAuth, getAllClubs);
 router.put('/:id', clubAuth, updateClub);
 router.delete('/:id', clubAuth, deleteClub);
+router.get('/', clubAuth, getClubDetails);
 
 // Club management by club
 router.post('/addMember', clubAuth, addClubMember);

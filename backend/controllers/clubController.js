@@ -131,6 +131,19 @@ const changeClubPassword = async (req, res) => {
   }
 };
 
+
+// get club details
+const getClubDetails = async (req, res) => {
+  try {
+    const club = await Club.findById(req.clubId).select("-password");
+    if (!club) return res.status(404).json({ message: "Club not found" });
+    res.status(200).json(club);
+  } catch (error) {
+    res.status(400).json({ error: error.message });
+  }
+};
+
+
 // =================================================
 // LOGOUT CLUB
 // =================================================
@@ -146,5 +159,6 @@ module.exports = {
   deleteClub,
   getAllClubs,
   changeClubPassword,
-  logoutClub  // <--- MUST EXPORT
+  logoutClub,
+  getClubDetails
 };
