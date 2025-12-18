@@ -38,7 +38,7 @@ router.post('/register',adminAuthMiddleware, createClub);
 
 router.put('/:id/change-password', adminAuthMiddleware, changeClubPassword);
 router.get('/', adminAuthMiddleware, getAllClubs);
-router.get('/:id', adminAuthMiddleware, getClubDetailsByID); // get single club details
+router.get('/clubs/:id', adminAuthMiddleware, getClubDetailsByID); // get single club details
 router.put('/:id', adminAuthMiddleware, updateClub);
 router.delete('/:id', adminAuthMiddleware, deleteClub);
 

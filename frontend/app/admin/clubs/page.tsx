@@ -74,7 +74,7 @@ export default function ClubsPage() {
         console.error("Error fetching Active Clubs:", error)
       })
   }, [])
-  
+
 
 
   return (
@@ -86,8 +86,10 @@ export default function ClubsPage() {
           <p className="text-muted-foreground">Manage all registered clubs</p>
         </div>
         <Button className="bg-primary hover:bg-primary/90">
-          <Plus className="mr-2 h-4 w-4" />
-          New Club
+          <Link href="/admin/clubs/create" className="flex items-center">
+            <Plus className="mr-2 h-4 w-4" />
+            New Club
+          </Link>
         </Button>
       </div>
 

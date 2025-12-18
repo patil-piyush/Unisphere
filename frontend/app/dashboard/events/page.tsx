@@ -14,6 +14,7 @@ import {
 import { EventCard } from "@/components/dashboard/event-card"
 import { cn } from "@/lib/utils"
 import axios from "axios"
+import Link from "next/link"
 
 const BackendURL = process.env.NEXT_PUBLIC_BACKEND_API_URL
 
@@ -219,34 +220,38 @@ export default function EventsPage() {
             viewMode === "grid" ? "md:grid-cols-2 lg:grid-cols-3" : "grid-cols-1"
           )}
         >
-          {filteredEvents.map((event) => (
-            <EventCard
-              key={event._id || event.id}
-              {...{
-                ...event,
-                _id: (event._id as string) || event.id,
-              }}
-            />
-          ))}
-        </div>
-      )}
-
-      {filteredEvents.length === 0 && !loading && (
-        <div className="text-center py-12">
-          <p className="text-muted-foreground">No events found matching your criteria.</p>
-          <Button
-            variant="outline"
-            className="mt-4 bg-transparent"
-            onClick={() => {
-              setSearchQuery("")
-              setSelectedCategory("All")
-              setPriceFilter("all")
+      {filteredEvents.map((event) => (
+        <Link href={`/dashboard/events/${event._id}`} className="block" key={event._id || event.id}>
+          <EventCard
+            {...{
+              ...event,
+              _id: (event._id as string) || event.id,
             }}
-          >
-            Clear Filters
-          </Button>
-        </div>
-      )}
+          />
+        </Link>
+      ))}
     </div>
+  )
+}
+
+{
+  filteredEvents.length === 0 && !loading && (
+    <div className="text-center py-12">
+      <p className="text-muted-foreground">No events found matching your criteria.</p>
+      <Button
+        variant="outline"
+        className="mt-4 bg-transparent"
+        onClick={() => {
+          setSearchQuery("")
+          setSelectedCategory("All")
+          setPriceFilter("all")
+        }}
+      >
+        Clear Filters
+      </Button>
+    </div>
+  )
+}
+    </div >
   )
 }

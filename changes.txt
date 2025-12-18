@@ -1,0 +1,6 @@
+1. admin email & pass fix in env file 
+2. keep the option to change the admin password
+3. api for fetching pending approvals - return count and event data of pending approval
+4. create club route - add cloudinary functionality for uploading logo 
+5. get participants for a event - for club as well as admin
+6. get comments for a event - for both club and admin
