@@ -30,4 +30,6 @@ monthlyPointsSchema.index(
   { unique: true }
 );
 
-module.exports = mongoose.model("MonthlyPoints", monthlyPointsSchema);
+module.exports =
+  mongoose.models.MonthlyPoints ||
+  mongoose.model("MonthlyPoints", monthlyPointsSchema);

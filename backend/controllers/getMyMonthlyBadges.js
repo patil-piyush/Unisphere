@@ -1,5 +1,6 @@
 const MonthlyPoints = require("../models/MonthlyPoints");
 const Badge = require("../models/Badge");
+const { getCurrentMonthYear } = require("../config/dateUtils");
 
 /**
  * Get badges earned by logged-in user for a given month
@@ -8,12 +9,13 @@ const Badge = require("../models/Badge");
 const getMyMonthlyBadges = async (req, res) => {
   try {
     const userId = req.userId;
-    const { month, year } = req.query;
+    let { month, year } = req.query;
 
+    // ✅ fallback to current month/year
     if (month === undefined || year === undefined) {
-      return res.status(400).json({
-        message: "month and year are required"
-      });
+      const current = getCurrentMonthYear();
+      month = current.month;
+      year = current.year;
     }
 
     // 1️⃣ Get user's monthly points
