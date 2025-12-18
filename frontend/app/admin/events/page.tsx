@@ -1,45 +1,64 @@
 "use client"
 
-import { Calendar, Search, Plus, Filter } from "lucide-react"
+import { useEffect, useState } from "react"
+import axios from "axios"
+import { Search, Filter } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { Badge } from "@/components/ui/badge"
 import { EventCard } from "@/components/dashboard/event-card"
 import Link from "next/link"
 
-const events = [
-  {
-    id: "1",
-    title: "Tech Fest 2024",
-    description: "Annual technology festival with hackathons",
-    image: "/placeholder.svg?height=200&width=300",
-    date: "Dec 15, 2024",
-    time: "9:00 AM",
-    location: "Main Auditorium",
-    category: "Technology",
-    club: "Tech Club",
-    attendees: 180,
-    maxAttendees: 200,
-    isAdmin: true
-  },
-  {
-    id: "2",
-    title: "Cultural Night",
-    description: "Celebrate diversity with performances",
-    image: "/placeholder.svg?height=200&width=300",
-    date: "Dec 20, 2024",
-    time: "6:00 PM",
-    location: "Open Air Theatre",
-    category: "Cultural",
-    club: "Cultural Committee",
-    attendees: 350,
-    maxAttendees: 500,
-    price: 5,
-    isAdmin: true
-  },
-]
+const BackendURL = process.env.NEXT_PUBLIC_BACKEND_API_URL
+
+type ApiEvent = {
+  _id: string
+  club_id?: { _id: string; name: string; logoURL?: string }
+  clubName?: string
+  title: string
+  description: string
+  bannerURL?: string
+  category: string
+  venue: string
+  start_time: string
+  start_date: string
+  end_time: string
+  end_date: string
+  max_capacity: number
+  registeredCount: number
+  isClosed?: boolean
+  price?: number
+}
 
 export default function EventsPage() {
+  const [events, setEvents] = useState<ApiEvent[]>([])
+  const [error, setError] = useState<string | null>(null)
+  const [loading, setLoading] = useState(false)
+
+  useEffect(() => {
+    if (!BackendURL) {
+      setError("Client misconfigured: NEXT_PUBLIC_BACKEND_API_URL is missing.")
+      return
+    }
+
+    setLoading(true)
+    axios
+      .get<ApiEvent[]>(`${BackendURL}/api/admin/events`, {
+        withCredentials: true,
+      })
+      .then((res) => {
+        setEvents(res.data)
+      })
+      .catch((err) => {
+        const msg =
+          err?.response?.data?.message ??
+          err.message ??
+          "Failed to load events."
+        setError(msg)
+        console.error("Error fetching events:", err)
+      })
+      .finally(() => setLoading(false))
+  }, [])
+
   return (
     <div className="space-y-8">
       {/* Header */}
@@ -62,13 +81,55 @@ export default function EventsPage() {
         </Button>
       </div>
 
+      {error && (
+        <div className="text-sm text-destructive bg-destructive/10 border border-destructive/30 rounded-md px-3 py-2">
+          {error}
+        </div>
+      )}
+
       {/* Events Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        {events.map((event) => (
-          <Link key={event.id} href={`/admin/events/${event.id}`}>
-            <EventCard {...event} />
-          </Link>
-        ))}
+        {loading && <p className="text-muted-foreground">Loading events...</p>}
+
+        {!loading &&
+          events.map((ev) => (
+            <Link
+              key={ev._id} // ✅ key on the top-level element returned from map
+              href={`/admin/events/${ev._id}`}
+              className="block"
+            >
+              <EventCard
+                _id={ev._id}
+                title={ev.title}
+                description={ev.description}
+                bannerURL={ev.bannerURL}
+                category={
+                  (ev.category as
+                    | "Workshop"
+                    | "Seminar"
+                    | "Social"
+                    | "Competition"
+                    | "Other") || "Other"
+                }
+                venue={ev.venue}
+                start_time={ev.start_time}
+                start_date={ev.start_date}
+                end_time={ev.end_time}
+                end_date={ev.end_date}
+                max_capacity={ev.max_capacity}
+                registeredCount={ev.registeredCount}
+                isClosed={ev.isClosed}
+                clubName={ev.clubName || ev.club_id?.name || "Unknown Club"}
+                price={ev.price}
+                isAdmin={true}
+              />
+            </Link>
+          ))}
+
+
+        {!loading && !error && events.length === 0 && (
+          <p className="text-muted-foreground">No events found.</p>
+        )}
       </div>
     </div>
   )

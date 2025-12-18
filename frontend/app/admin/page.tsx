@@ -1,12 +1,15 @@
 "use client"
 
-import { BarChart3, Users, Calendar, DollarSign, TrendingUp, AlertCircle } from "lucide-react"
+import { BarChart3, Users, Calendar, DollarSign, TrendingUp, AlertCircle, LucideIcon } from "lucide-react"
 import { StatsCard } from "@/components/dashboard/stats-card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
+import { useState, useEffect, use } from "react"
 import Link from "next/link"
+import axios from "axios"
+const BackendURL = process.env.NEXT_PUBLIC_BACKEND_API_URL;
 
-const stats = [
+const st = [
   {
     title: "Total Students",
     value: "10,245",
@@ -37,19 +40,108 @@ const stats = [
   },
 ]
 
-const pendingApprovals = [
+const pendingApproval = [
   { id: 1, type: "Event", name: "Inter-College Hackathon", club: "Tech Club", date: "Dec 20" },
   { id: 2, type: "Event", name: "Cultural Night", club: "Cultural Committee", date: "Dec 25" },
   { id: 3, type: "Club", name: "Robotics Club", requestedBy: "Prof. Smith", date: "Dec 10" },
 ]
 
-const recentActivity = [
+const recentActivit = [
   { id: 1, action: "New event created", by: "Tech Club", time: "2 hours ago" },
   { id: 2, action: "Club registration", by: "Photography Club", time: "4 hours ago" },
   { id: 3, action: "Report submitted", by: "Finance Dept", time: "1 day ago" },
 ]
 
 export default function AdminDashboard() {
+
+  const [stats, setStats] = useState<Array<{
+    title: string;
+    value: string | number;
+    change: string;
+    changeType: "positive" | "neutral" | "negative";
+    icon: LucideIcon;
+  }>>([]);
+  const [pendingApprovals, setPendingApprovals] = useState<Array<{
+    id: number;
+    type: string;
+    name: string;
+    club?: string;
+    requestedBy?: string;
+    date: string;
+  }>>([]);
+  const [recentActivity, setRecentActivity] = useState<Array<{
+    id: number;
+    action: string;
+    by: string;
+    time: string;
+  }>>([]);
+  const [totalStudents, setTotalStudents] = useState(0);
+  const [activeClubs, setActiveClubs] = useState(0);
+  const [eventsThisMonth, setEventsThisMonth] = useState(0);
+  // const [totalBudget, setTotalBudget] = useState(0);
+
+
+  useEffect(() => {
+    // Fetch dashboard data from API or database
+    axios.get(`${BackendURL}/api/admin/users`,{withCredentials: true})
+      .then(response => {
+        const data = response.data;
+        setTotalStudents(data.count);
+      })
+      .catch(error => {
+        console.error("Error fetching Total Students:", error);
+      });
+
+    axios.get(`${BackendURL}/api/admin/`,{withCredentials: true})
+      .then(response => {
+        const data = response.data;
+        setActiveClubs(data.count);
+      })
+      .catch(error => {
+        console.error("Error fetching Active Clubs:", error);
+      });
+
+    axios.get(`${BackendURL}/api/admin/events/current-month/count`,{withCredentials: true})
+      .then(response => {
+        const data = response.data;
+        setEventsThisMonth(data.count);
+      })
+      .catch(error => {
+        console.error("Error fetching Active Clubs:", error);
+      });
+
+
+    setStats([{
+      title: "Total Students",
+      value: totalStudents,
+      change: "+245 this semester",
+      changeType: "positive" as const,
+      icon: Users,
+    },
+    {
+      title: "Active Clubs",
+      value: activeClubs,
+      change: `${pendingApprovals.length} pending approval`,
+      changeType: "neutral" as const,
+      icon: BarChart3,
+    },
+    {
+      title: "Events This Month",
+      value: eventsThisMonth,
+      change: "+15 vs last month",
+      changeType: "positive" as const,
+      icon: Calendar,
+    },
+    {
+      title: "Total Budget",
+      value: "rs 125K",
+      change: "rs 18K remaining",
+      changeType: "neutral" as const,
+      icon: DollarSign,
+    }])
+
+  }, []);
+
   return (
     <div className="space-y-8">
       {/* Page Header */}

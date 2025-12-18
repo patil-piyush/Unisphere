@@ -65,7 +65,6 @@ export function EventCard({
       : ""
 
   return (
-    <Link href={`/dashboard/events/${_id}`} className="block">
       <div className="group glass rounded-2xl overflow-hidden hover:shadow-xl transition-all duration-300 hover:-translate-y-1">
         {/* Image */}
         <div className="relative h-48 overflow-hidden">
@@ -153,6 +152,5 @@ export function EventCard({
           </div>
         </div>
       </div>
-    </Link>
   )
 }

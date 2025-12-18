@@ -5,9 +5,13 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
 import { ClubCard } from "@/components/dashboard/club-card"
+import { useState, useEffect } from "react"
+import axios from "axios"
 import Link from "next/link"
+const BackendURL = process.env.NEXT_PUBLIC_BACKEND_API_URL;
 
-const clubs = [
+
+const clu = [
   {
     id: "1",
     name: "Tech Club",
@@ -38,6 +42,41 @@ const clubs = [
 ]
 
 export default function ClubsPage() {
+
+  const [clubs, setClubs] = useState<Array<{
+    id: string;
+    name: string;
+    description: string;
+    image: string;
+    members: number;
+    events: number;
+    category: string;
+  }>>([]);
+
+
+  useEffect(() => {
+    axios
+      .get(`${BackendURL}/api/admin/`, { withCredentials: true })
+      .then((response) => {
+        const data = response.data
+        const mapped = (data.clubs || []).map((c: any) => ({
+          id: c._id,
+          name: c.name,
+          description: c.description,
+          image: c.image || "/placeholder.svg",
+          members: c.membersCount ?? 0,
+          events: c.eventsCount ?? 0,
+          category: c.category || "Other",
+        }))
+        setClubs(mapped)
+      })
+      .catch((error) => {
+        console.error("Error fetching Active Clubs:", error)
+      })
+  }, [])
+
+
+
   return (
     <div className="space-y-8">
       {/* Header */}
@@ -47,8 +86,10 @@ export default function ClubsPage() {
           <p className="text-muted-foreground">Manage all registered clubs</p>
         </div>
         <Button className="bg-primary hover:bg-primary/90">
-          <Plus className="mr-2 h-4 w-4" />
-          New Club
+          <Link href="/admin/clubs/create" className="flex items-center">
+            <Plus className="mr-2 h-4 w-4" />
+            New Club
+          </Link>
         </Button>
       </div>
 
@@ -64,7 +105,7 @@ export default function ClubsPage() {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {clubs.map((club) => (
           <Link key={club.id} href={`/admin/clubs/${club.id}`}>
-            <ClubCard {...club} />
+            <ClubCard {...club} id={club.id} />
           </Link>
         ))}
       </div>
