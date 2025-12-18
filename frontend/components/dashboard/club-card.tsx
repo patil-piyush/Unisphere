@@ -1,7 +1,6 @@
 "use client"
 
 import Image from "next/image"
-import Link from "next/link"
 import { Users, Calendar } from "lucide-react"
 import { Button } from "@/components/ui/button"
 
@@ -15,7 +14,15 @@ interface ClubCardProps {
   category: string
 }
 
-export function ClubCard({ id, name, description, image, members, events, category }: ClubCardProps) {
+export function ClubCard({
+  id,
+  name,
+  description,
+  image,
+  members,
+  events,
+  category,
+}: ClubCardProps) {
   return (
     <div className="glass rounded-2xl p-6 hover:shadow-xl transition-all duration-300 hover:-translate-y-1 group">
       <div className="flex items-start gap-4">
@@ -29,9 +36,13 @@ export function ClubCard({ id, name, description, image, members, events, catego
           />
         </div>
         <div className="flex-1 min-w-0">
-          <p className="text-xs text-primary font-medium uppercase tracking-wide mb-1">{category}</p>
+          <p className="text-xs text-primary font-medium uppercase tracking-wide mb-1">
+            {category}
+          </p>
           <h3 className="font-semibold text-lg truncate">{name}</h3>
-          <p className="text-muted-foreground text-sm line-clamp-2 mt-1">{description}</p>
+          <p className="text-muted-foreground text-sm line-clamp-2 mt-1">
+            {description}
+          </p>
         </div>
       </div>
 
@@ -46,11 +57,9 @@ export function ClubCard({ id, name, description, image, members, events, catego
             <span>{events} events</span>
           </div>
         </div>
-        <Link href={`/clubs/${id}`}>
-          <Button size="sm" variant="ghost">
-            View
-          </Button>
-        </Link>
+        <Button size="sm" variant="ghost">
+          View
+        </Button>
       </div>
     </div>
   )

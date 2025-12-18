@@ -39,7 +39,7 @@ export function AdminLoginForm() {
     setIsLoading(true)
     try {
       // change the URL to match admin login endpoint
-      const response = await fetch('http://localhost:5000/api/clubs/login', {
+      const response = await fetch('http://localhost:5000/api/admin/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, password }),
