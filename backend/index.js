@@ -15,6 +15,9 @@ const eventRoutes = require("./routes/eventsRoutes");
 const eventRegistrationRoutes = require("./routes/eventRegistrationRoute");
 const eventCommentRoutes = require("./routes/eventCommentRoute");
 
+// admin related
+const adminRoutes = require("./routes/adminRoutes");
+
 //swaggere related
 const swaggerUi = require("swagger-ui-express");
 const swaggerDocument = require("./swagger/swagger.json");
@@ -38,6 +41,9 @@ app.use("/api/users", userRoutes);
 app.use("/api/events", eventRoutes);
 app.use("/api/event-registrations", eventRegistrationRoutes);
 app.use("/api/event-comments", eventCommentRoutes);
+
+// admin related routes
+app.use("/api/admin", adminRoutes);
 
 //Attendance Routes 
 app.use("/api", attendanceRoutes);
