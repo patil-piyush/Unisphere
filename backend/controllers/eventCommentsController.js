@@ -7,23 +7,51 @@ const EventRegistration = require("../models/eventRegistration");
 const addComment = async (req, res) => {
   try {
     const user_id = req.userId;
-    const { event_id, content, parent_comment_id } = req.body;
+    const event_id = req.params.eventId;
+    const { content, parent_comment_id } = req.body;
 
-    const isRegistered = await EventRegistration.findOne({ event_id, user_id });
+    // Basic validation
+    if (!content || !content.trim()) {
+      return res.status(400).json({ message: "Comment content is required" });
+    }
+
+    // Check registration
+    const isRegistered = await EventRegistration.exists({ event_id, user_id });
     if (!isRegistered) {
-      return res.status(403).json({ message: "You must be registered for this event to comment" });
+      return res.status(403).json({
+        message: "You must be registered for this event to comment",
+      });
+    }
+
+    // Validate parent comment (if reply)
+    if (parent_comment_id) {
+      const parentExists = await Comment.exists({
+        _id: parent_comment_id,
+        event_id, // ensures reply is for same event
+      });
+
+      if (!parentExists) {
+        return res
+          .status(400)
+          .json({ message: "Parent comment not found for this event" });
+      }
     }
 
     const comment = await Comment.create({
       event_id,
       user_id,
-      content,
-      parent_comment_id: parent_comment_id || null
+      content: content.trim(),
+      parent_comment_id: parent_comment_id || null,
     });
 
-    res.status(201).json({ message: "Comment added", comment });
+    res.status(201).json({
+      message: "Comment added",
+      comment,
+    });
+
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    console.error("Add comment error:", error);
+    res.status(500).json({ error: "Failed to add comment" });
   }
 };
 
@@ -75,20 +103,22 @@ const toggleLikeComment = async (req, res) => {
     if (alreadyLiked) {
       comment.likes.pull(user_id);
       await comment.save();
-      return res.status(200).json({ message: "Unliked" });
+      return res.status(200).json({ message: "Unliked", likeCount: comment.likes.length });
     } else {
       comment.likes.push(user_id);
       await comment.save();
-      return res.status(200).json({ message: "Liked" });
+      return res.status(200).json({ message: "Liked", likeCount: comment.likes.length });
     }
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
 };
 
+
 module.exports = {
   addComment,
   getEventComments,
   deleteComment,
-  toggleLikeComment
+  toggleLikeComment,
+  
 };

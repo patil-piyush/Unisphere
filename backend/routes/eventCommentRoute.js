@@ -5,14 +5,14 @@ const {
   addComment,
   getEventComments,
   deleteComment,
-  toggleLikeComment
+  toggleLikeComment,
 } = require("../controllers/eventCommentsController");
 
 // eventId in params for fetching
 router.get("/:eventId", getEventComments);
 
 // user actions
-router.post("/", userAuthMiddleware, addComment);
+router.post("/:eventId/", userAuthMiddleware, addComment);
 router.delete("/:commentId", userAuthMiddleware, deleteComment);
 router.post("/:commentId/like", userAuthMiddleware, toggleLikeComment);
 
