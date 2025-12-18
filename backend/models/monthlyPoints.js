@@ -1,6 +1,6 @@
 const mongoose = require("mongoose");
 
-const monthlyUserStatsSchema = new mongoose.Schema({
+const monthlyPointsSchema = new mongoose.Schema({
   user_id: {
     type: mongoose.Schema.Types.ObjectId,
     ref: "User",
@@ -8,7 +8,7 @@ const monthlyUserStatsSchema = new mongoose.Schema({
   },
 
   month: {
-    type: Number, // 0–11
+    type: Number, // 0 - 11
     required: true
   },
 
@@ -17,26 +17,17 @@ const monthlyUserStatsSchema = new mongoose.Schema({
     required: true
   },
 
-  totalPoints: {
+  points: {
     type: Number,
     default: 0
-  },
-
-  badges: [{
-    type: mongoose.Schema.Types.ObjectId,
-    ref: "Badge"
-  }],
-
-  isStudentOfMonth: {
-    type: Boolean,
-    default: false
   }
 
 }, { timestamps: true });
 
-monthlyUserStatsSchema.index(
+// One record per user per month
+monthlyPointsSchema.index(
   { user_id: 1, month: 1, year: 1 },
   { unique: true }
 );
 
-module.exports = mongoose.model("MonthlyUserStats", monthlyUserStatsSchema);
+module.exports = mongoose.model("MonthlyPoints", monthlyPointsSchema);

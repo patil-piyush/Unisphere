@@ -18,7 +18,7 @@ const attendanceTokenSchema = new mongoose.Schema({
     },
     duration: {
         type: Number, // seconds
-        required: true
+        default: 30
     }
 }, { timestamps: true });
 

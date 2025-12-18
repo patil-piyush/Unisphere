@@ -10,17 +10,13 @@ const badgeSchema = new mongoose.Schema({
     type: String
   },
 
-  iconURL: {
-    type: String
-  },
-
   requiredPoints: {
-    type: Number,
-    required: true
+    type: Number
   },
 
-  level: {
-    type: Number // for ordering
+  isPermanent: {
+    type: Boolean,
+    default: false
   }
 
 }, { timestamps: true });

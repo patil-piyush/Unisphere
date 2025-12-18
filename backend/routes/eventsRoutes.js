@@ -23,7 +23,7 @@ router.get("/club/myevents", clubAuth, getClubEvents);
 router.get("/:id/registrations", clubAuth, getEventRegistrations);
 
 // Modify create after
-router.post("/", upload.single("banner"), clubAuth, createEvent);
+router.post("/", clubAuth, upload.single("bannerURL"), createEvent);
 router.put("/:id", clubAuth, updateEvent);
 router.delete("/:id", clubAuth, deleteEvent);
 router.put("/:id/close", clubAuth, closeRegistration);

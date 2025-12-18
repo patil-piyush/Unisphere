@@ -1,13 +1,21 @@
 const Attendance = require("../models/attendance");
 const AttendanceToken = require("../models/attendanceToken");
 const EventRegistration = require("../models/eventRegistration");
-const User = require("../models/user");
 
+const MonthlyPoints = require("../models/MonthlyPoints");
+const { EVENT_ATTENDANCE_POINTS } = require("../config/pointsConfig");
+const { getCurrentMonthYear } = require("../config/dateUtils");
+
+/**
+ * User scans QR and marks attendance
+ * → Points awarded ONLY here
+ */
 const scanAttendance = async (req, res) => {
   try {
     const userId = req.userId;
     const { token } = req.body;
 
+    // 1️⃣ Validate token
     const tokenDoc = await AttendanceToken.findOne({ token });
     if (!tokenDoc)
       return res.status(400).json({ message: "Invalid QR code" });
@@ -17,6 +25,7 @@ const scanAttendance = async (req, res) => {
 
     const eventId = tokenDoc.event_id;
 
+    // 2️⃣ Ensure user is registered
     const registration = await EventRegistration.findOne({
       event_id: eventId,
       user_id: userId
@@ -25,23 +34,45 @@ const scanAttendance = async (req, res) => {
     if (!registration)
       return res.status(403).json({ message: "Not registered for this event" });
 
-    const existing = await Attendance.findOne({ event_id: eventId, user_id: userId });
+    // 3️⃣ Prevent duplicate attendance
+    const existing = await Attendance.findOne({
+      event_id: eventId,
+      user_id: userId
+    });
+
     if (existing)
       return res.status(409).json({ message: "Attendance already marked" });
 
+    // 4️⃣ Mark attendance
     await Attendance.create({
       event_id: eventId,
       user_id: userId,
       check_in_time: new Date()
     });
 
-    res.status(200).json({ message: "Attendance marked successfully" });
+    // 5️⃣ Add monthly points
+    const { month, year } = getCurrentMonthYear();
+
+    const monthlyPoints = await MonthlyPoints.findOneAndUpdate(
+      { user_id: userId, month, year },
+      { $inc: { points: EVENT_ATTENDANCE_POINTS } },
+      { upsert: true, new: true }
+    );
+
+    res.status(200).json({
+      message: "Attendance marked successfully",
+      pointsAdded: EVENT_ATTENDANCE_POINTS,
+      totalMonthlyPoints: monthlyPoints.points
+    });
 
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
 };
 
+/**
+ * Live attendance feed for club
+ */
 const getLiveAttendance = async (req, res) => {
   try {
     const eventId = req.params.eventId;
@@ -57,4 +88,7 @@ const getLiveAttendance = async (req, res) => {
   }
 };
 
-module.exports = { scanAttendance, getLiveAttendance };
+module.exports = {
+  scanAttendance,
+  getLiveAttendance
+};

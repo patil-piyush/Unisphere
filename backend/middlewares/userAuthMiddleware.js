@@ -13,13 +13,6 @@ const userAuthMiddleware = (req, res, next) => {
         res.status(401).json({message: "Invalid or expired token."});
     }
 }
-const adminOnly = (req, res, next) => {
-    if(req.userRole !== 'admin'){
-        return res.status(403).json({message: "Access denied. Admins only."});
-    }
-    next();
-}
 module.exports = {
     userAuthMiddleware,
-    adminOnly
 }

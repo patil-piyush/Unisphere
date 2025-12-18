@@ -12,7 +12,8 @@ const {
   deleteUser,
   logoutUser
 } = require("../controllers/userController");
-const { userAuthMiddleware, adminOnly } = require("../middlewares/userAuthMiddleware");
+const { userAuthMiddleware} = require("../middlewares/userAuthMiddleware");
+const { adminAuthMiddleware } = require("../middlewares/adminAuthMiddleware");
 
 router.post("/register", registerUser);
 router.post("/login", loginUser);
@@ -26,7 +27,7 @@ router.put("/me", userAuthMiddleware,
   ]), updateUserProfile);
 router.put("/change-password", userAuthMiddleware, updateUserPassword);
 
-router.get("/all", userAuthMiddleware, adminOnly, getAllUsers);
+router.get("/all", userAuthMiddleware, adminAuthMiddleware, getAllUsers);
 router.delete("/me", userAuthMiddleware, deleteUser);
 
 module.exports = router;
