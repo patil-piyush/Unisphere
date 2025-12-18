@@ -18,6 +18,11 @@ const eventCommentRoutes = require("./routes/eventCommentRoute");
 // admin related
 const adminRoutes = require("./routes/adminRoutes");
 
+// Leaderboard related routes
+const gamificationRoutes = require("./routes/gamificationRoutes");
+
+require("./crons/gamificationCron");
+
 //swaggere related
 const swaggerUi = require("swagger-ui-express");
 const swaggerDocument = require("./swagger/swagger.json");
@@ -47,6 +52,9 @@ app.use("/api/admin", adminRoutes);
 
 //Attendance Routes 
 app.use("/api", attendanceRoutes);
+
+// Leaderboard Routes
+app.use("/api/gamification", gamificationRoutes);
 
 //swagger setup
 app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerDocument));

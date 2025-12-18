@@ -42,6 +42,10 @@ const userSchema = new mongoose.Schema({
     },
     aboutMe: {
         type: String
+    },
+    permanentBadges: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "Badge"
     }
 }, { timestamps: true });
 
