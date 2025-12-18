@@ -8,14 +8,44 @@ const jwt = require('jsonwebtoken');
 // =================================================
 const createClub = async (req, res) => {
   try {
-    const { name, description, logoURL, email, password } = req.body;
+    const { name, description, email, password } = req.body;
 
     const hashedPassword = await bcrypt.hash(password, 10);
+
+    // upload logo if provided
+    let logoURL;
+    if (req.file) {
+      // using buffer upload
+      const uploaded = await cloudinary.uploader.upload_stream(
+        {
+          folder: "club/logos",
+          resource_type: "image",
+        },
+        (error, result) => {
+          if (error) console.log(error);
+          return result;
+        }
+      );
+
+      logoURL = await new Promise((resolve, reject) => {
+          const stream = cloudinary.uploader.upload_stream(
+            {
+              folder: "club/logos",
+              resource_type: "image",
+            },
+            (error, result) => {
+              if (error) return reject(error);
+              resolve(result.secure_url);
+            }
+          );
+          stream.end(req.file.buffer);
+        });
+      }
 
     const newClub = await Club.create({   // <-- fixed creat to create
       name,
       description,
-      logoURL,
+      logoURL : logoURL || undefined,
       email,
       password: hashedPassword
     });
