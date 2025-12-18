@@ -22,33 +22,33 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Input } from "@/components/ui/input"
 import { cn } from "@/lib/utils"
 import axios from "axios"
+import { CommentItem } from "@/components/event/CommentItem"
 
 const BackendURL = process.env.NEXT_PUBLIC_BACKEND_API_URL || "http://localhost:5000"
 
-const discussions = [
-  {
-    id: 1,
-    user: { name: "Priya Patel", avatar: "/diverse-female-student.png" },
-    message: "Is laptop mandatory for the hackathon?",
-    time: "2 hours ago",
-    likes: 5,
-  },
-  {
-    id: 2,
-    user: { name: "Amit Kumar", avatar: "/male-student-studying.png" },
-    message: "Yes, you'll need a laptop. They'll provide power outlets and WiFi.",
-    time: "1 hour ago",
-    likes: 3,
-    isReply: true,
-  },
-  {
-    id: 3,
-    user: { name: "Sarah Lee", avatar: "/asian-female-student.jpg" },
-    message: "Can we form teams on the spot or do we need to register as a team?",
-    time: "45 mins ago",
-    likes: 2,
-  },
-]
+// at top (replace static discussions)
+type ApiComment = {
+  _id: string
+  user_id: { name: string; profileIMG?: string }  // from populate
+  event_id: string
+  parent_comment_id?: string | null
+  content: string
+  likes: string[]            // array of user ids
+  createdAt: string
+}
+
+type CommentWithReplies = {
+  _id: string
+  user: { name: string; avatar?: string }
+  content: string
+  createdAt: string
+  likesCount: number
+  parent_comment_id?: string | null
+  replies: CommentWithReplies[]
+}
+
+
+
 
 const participants = [
   { name: "John Doe", department: "Computer Science", avatar: "/student-studying.png" },
@@ -61,6 +61,13 @@ const participants = [
 export default function EventDetailPage() {
   const params = useParams<{ id: string }>()
   const eventId = params.id
+
+  // replace static discussions array with state
+  const [comments, setComments] = useState<CommentWithReplies[]>([])  
+  const [commentLoading, setCommentLoading] = useState(false)
+  const [commentError, setCommentError] = useState<string | null>(null)
+  // track which comment you're replying to (optional)
+  const [replyTo, setReplyTo] = useState<string | null>(null)
 
   const [eventData, setEventData] = useState<any | null>(null)
   const [loading, setLoading] = useState(true)
@@ -88,13 +95,13 @@ export default function EventDetailPage() {
       })
       .finally(() => setLoading(false))
 
-      axios
+    axios
       .get(`${BackendURL}/api/event-registrations/my`, { withCredentials: true })
       .then((res) => {
         console.log("My registrations:", res.data)
-    
+
         const data = Array.isArray(res.data) ? res.data : []
-    
+
         const found = data.some(
           (r: any) =>
             r &&
@@ -102,13 +109,63 @@ export default function EventDetailPage() {
             typeof r.event_id._id === "string" &&
             r.event_id._id === eventId
         )
-    
+
         setIsRegistered(found)
       })
       .catch((err) => {
         console.error("Failed to fetch registrations", err)
       })
-    
+
+      const fetchComments = async () => {
+        try {
+          setCommentLoading(true)
+          setCommentError(null)
+      
+          const res = await axios.get<ApiComment[]>(
+            `${BackendURL}/api/event-comments/${eventId}`,
+            { withCredentials: true },
+          )
+      
+          const raw = res.data || []
+      
+          // normalize each comment
+          const flat: CommentWithReplies[] = raw.map((c) => ({
+            _id: c._id,
+            user: {
+              name: c.user_id?.name ?? "Unknown User",
+              avatar: c.user_id?.profileIMG,
+            },
+            content: c.content,
+            createdAt: c.createdAt,
+            likesCount: c.likes?.length ?? 0,
+            parent_comment_id: c.parent_comment_id ?? null,
+            replies: [],
+          }))
+      
+          const map = new Map<string, CommentWithReplies>()
+          flat.forEach((c) => {
+            map.set(c._id, c)
+          })
+      
+          const roots: CommentWithReplies[] = []
+          flat.forEach((c) => {
+            if (c.parent_comment_id && map.has(c.parent_comment_id)) {
+              map.get(c.parent_comment_id)!.replies.push(c)
+            } else {
+              roots.push(c)
+            }
+          })
+      
+          setComments(roots)
+        } catch (err) {
+          console.error("Failed to fetch comments", err)
+          setCommentError("Failed to load discussion.")
+        } finally {
+          setCommentLoading(false)
+        }
+      }
+      
+    fetchComments()
   }, [eventId])
 
 
@@ -201,6 +258,99 @@ export default function EventDetailPage() {
       setIsRegLoading(false)
     }
   }
+
+
+  const handleAddComment = async () => {
+    if (!eventId || !newComment.trim()) return
+    try {
+      const body: any = { content: newComment.trim() }
+      if (replyTo) body.parent_comment_id = replyTo
+  
+      const res = await axios.post(
+        `${BackendURL}/api/event-comments/${eventId}`,
+        body,
+        { withCredentials: true },
+      )
+  
+      // controller returns { message, comment }
+      const created: ApiComment = res.data.comment
+  
+      const normalized: CommentWithReplies = {
+        _id: created._id,
+        user: {
+          name: (created as any).user_id?.name ?? "You",
+          avatar: (created as any).user_id?.profileIMG,
+        },
+        content: created.content,
+        createdAt: created.createdAt,
+        likesCount: created.likes?.length ?? 0,
+        parent_comment_id: created.parent_comment_id ?? null,
+        replies: [],
+      }
+  
+      setNewComment("")
+      setReplyTo(null)
+  
+      setComments((prev) => {
+        if (normalized.parent_comment_id) {
+          const parentId = normalized.parent_comment_id
+          const attach = (list: CommentWithReplies[]): CommentWithReplies[] =>
+            list.map((c) =>
+              c._id === parentId
+                ? { ...c, replies: [...c.replies, normalized] }
+                : { ...c, replies: attach(c.replies) },
+            )
+          return attach(prev)
+        }
+        return [...prev, normalized]
+      })
+    } catch (err) {
+      console.error("Failed to add comment", err)
+    }
+  }
+  
+  const handleToggleLike = async (commentId: string) => {
+    if (!eventId) return
+    try {
+      const res = await axios.post(
+        `${BackendURL}/api/event-comments/${commentId}/like`,
+        {},
+        { withCredentials: true },
+      )
+  
+      const likeCount = res.data.likeCount as number
+  
+      const updateNode = (list: CommentWithReplies[]): CommentWithReplies[] =>
+        list.map((c) => ({
+          ...c,
+          likesCount: c._id === commentId ? likeCount : c.likesCount,
+          replies: updateNode(c.replies),
+        }))
+  
+      setComments((prev) => updateNode(prev))
+    } catch (err) {
+      console.error("Failed to toggle like", err)
+    }
+  }
+  
+
+  const handleDeleteComment = async (commentId: string) => {
+    if (!eventId) return
+    try {
+      await axios.delete(
+        `${BackendURL}/api/event-comments/${commentId}`,
+        { withCredentials: true },
+      )
+      const removeNode = (list: CommentWithReplies[]): CommentWithReplies[] =>
+        list
+          .filter((c) => c._id !== commentId)
+          .map((c) => ({ ...c, replies: removeNode(c.replies) }))
+      setComments((prev) => removeNode(prev))
+    } catch (err) {
+      console.error("Failed to delete comment", err)
+    }
+  }
+
 
   return (
     <div className="space-y-6">
@@ -316,60 +466,51 @@ export default function EventDetailPage() {
                 <div className="flex gap-3 mb-6">
                   <Avatar className="h-10 w-10">
                     <AvatarImage src="/current-user.jpg" />
-                    <AvatarFallback>JD</AvatarFallback>
+                    <AvatarFallback>ME</AvatarFallback>
                   </Avatar>
                   <div className="flex-1 flex gap-2">
                     <Input
-                      placeholder="Ask a question or share your thoughts..."
+                      placeholder={
+                        replyTo
+                          ? "Reply to comment..."
+                          : "Ask a question or share your thoughts..."
+                      }
                       value={newComment}
                       onChange={(e) => setNewComment(e.target.value)}
                     />
-                    <Button size="icon">
+                    <Button size="icon" onClick={handleAddComment}>
                       <Send className="h-4 w-4" />
                     </Button>
                   </div>
                 </div>
 
+                {commentError && (
+                  <p className="text-sm text-destructive mb-2">{commentError}</p>
+                )}
+                {commentLoading && (
+                  <p className="text-sm text-muted-foreground">Loading comments...</p>
+                )}
+
                 {/* Comments */}
                 <div className="space-y-4">
-                  {discussions.map((comment) => (
-                    <div
-                      key={comment.id}
-                      className={cn("flex gap-3", comment.isReply && "ml-12")}
-                    >
-                      <Avatar className="h-8 w-8">
-                        <AvatarImage src={comment.user.avatar || "/placeholder.svg"} />
-                        <AvatarFallback>
-                          {comment.user.name
-                            .split(" ")
-                            .map((n) => n[0])
-                            .join("")}
-                        </AvatarFallback>
-                      </Avatar>
-                      <div className="flex-1">
-                        <div className="flex items-center gap-2 mb-1">
-                          <span className="font-medium text-sm">{comment.user.name}</span>
-                          <span className="text-xs text-muted-foreground">
-                            {comment.time}
-                          </span>
-                        </div>
-                        <p className="text-sm text-muted-foreground">{comment.message}</p>
-                        <div className="flex items-center gap-4 mt-2">
-                          <button className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground">
-                            <Heart className="h-3 w-3" />
-                            {comment.likes}
-                          </button>
-                          <button className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground">
-                            <MessageCircle className="h-3 w-3" />
-                            Reply
-                          </button>
-                        </div>
-                      </div>
-                    </div>
+                  {comments.map((comment) => (
+                    <CommentItem
+                      key={comment._id}
+                      comment={comment}
+                      onReply={(id) => setReplyTo(id)}
+                      onLike={handleToggleLike}
+                      onDelete={handleDeleteComment}
+                    />
                   ))}
+                  {!commentLoading && comments.length === 0 && (
+                    <p className="text-sm text-muted-foreground">
+                      No comments yet. Be the first to start the discussion!
+                    </p>
+                  )}
                 </div>
               </div>
             </TabsContent>
+
 
             <TabsContent value="participants" className="space-y-6 mt-6">
               <div className="glass rounded-2xl p-6">

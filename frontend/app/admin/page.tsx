@@ -9,36 +9,6 @@ import Link from "next/link"
 import axios from "axios"
 const BackendURL = process.env.NEXT_PUBLIC_BACKEND_API_URL;
 
-const st = [
-  {
-    title: "Total Students",
-    value: "10,245",
-    change: "+245 this semester",
-    changeType: "positive" as const,
-    icon: Users,
-  },
-  {
-    title: "Active Clubs",
-    value: "45",
-    change: "3 pending approval",
-    changeType: "neutral" as const,
-    icon: BarChart3,
-  },
-  {
-    title: "Events This Month",
-    value: "78",
-    change: "+15 vs last month",
-    changeType: "positive" as const,
-    icon: Calendar,
-  },
-  {
-    title: "Total Budget",
-    value: "$125K",
-    change: "$18K remaining",
-    changeType: "neutral" as const,
-    icon: DollarSign,
-  },
-]
 
 const pendingApproval = [
   { id: 1, type: "Event", name: "Inter-College Hackathon", club: "Tech Club", date: "Dec 20" },
@@ -83,27 +53,30 @@ export default function AdminDashboard() {
 
   useEffect(() => {
     // Fetch dashboard data from API or database
-    axios.get(`${BackendURL}/api/admin/users`,{withCredentials: true})
+    axios.get(`${BackendURL}/api/admin/users`, { withCredentials: true })
       .then(response => {
         const data = response.data;
+        console.log("Total Students data:", data.count);
         setTotalStudents(data.count);
       })
       .catch(error => {
         console.error("Error fetching Total Students:", error);
       });
 
-    axios.get(`${BackendURL}/api/admin/`,{withCredentials: true})
+    axios.get(`${BackendURL}/api/admin/`, { withCredentials: true })
       .then(response => {
         const data = response.data;
+        console.log("active clubs:", data.count);
         setActiveClubs(data.count);
       })
       .catch(error => {
         console.error("Error fetching Active Clubs:", error);
       });
 
-    axios.get(`${BackendURL}/api/admin/events/current-month/count`,{withCredentials: true})
+    axios.get(`${BackendURL}/api/admin/events/current-month/count`, { withCredentials: true })
       .then(response => {
         const data = response.data;
+        console.log("Events This Month data:", data.count);
         setEventsThisMonth(data.count);
       })
       .catch(error => {
@@ -140,7 +113,7 @@ export default function AdminDashboard() {
       icon: DollarSign,
     }])
 
-  }, []);
+  }, [totalStudents, activeClubs, eventsThisMonth]);
 
   return (
     <div className="space-y-8">

@@ -10,7 +10,8 @@ const {
 
 const {
   getMonthlyLeaderboard,
-  getUserMonthlyPoints
+  getUserMonthlyPoints,
+  getMonthlyLeaderboardRank
 } = require('../controllers/leaderboardController')
 
 // Get logged-in user's monthly badges
@@ -23,6 +24,13 @@ router.get(
 router.get(
   "/leaderboard/monthly",
   getMonthlyLeaderboard
+);
+
+
+router.get(
+  "/leaderboard/rank",
+  userAuthMiddleware,
+  getMonthlyLeaderboardRank
 );
 
 router.get(

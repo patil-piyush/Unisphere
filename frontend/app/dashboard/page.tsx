@@ -35,9 +35,12 @@ type Event = {
 export default function DashboardPage() {
   const [username, setUsername] = useState("")
   const [eventAttended, setEventAttended] = useState(0)
+  const [points, setPoints] = useState(0)
+  const [badges, setbadges] = useState(0)
+  const [rank, setRank] = useState("")
   const [stats, setStats] = useState<Array<{
     title: string,
-    value: (string | number),
+    value: any,
     change: string,
     changeType: "positive" | "neutral" | "negative",
     icon: LucideIcon,
@@ -60,6 +63,29 @@ export default function DashboardPage() {
       .catch((error) => {
         console.error("User is not authenticated!", error)
         window.location.href = "/login"
+      })
+
+    axios.get(`${BackendURL}/api/gamification/points/monthly`, { withCredentials: true })
+      .then((response) => setPoints(response.data.points.toString()))
+      .catch((error) => {
+        console.error("Error fetching user points!", error)
+      })
+
+    axios.get(`${BackendURL}/api/gamification/points/monthly`, { withCredentials: true })
+      .then((response) => {
+        const badges = response.data.badges ?? [];
+        setbadges(badges.length);
+      }
+      )
+      .catch((error) => {
+        console.error("Error fetching user points!", error)
+      })
+
+
+    axios.get(`${BackendURL}/api/gamification/leaderboard/rank`, { withCredentials: true })
+      .then((response) => setRank(response.data.rank.toString()))
+      .catch((error) => {
+        console.error("Error fetching user points!", error)
       })
 
     // events + registration flags for cards
@@ -113,33 +139,38 @@ export default function DashboardPage() {
       {
         title: "Events Attended",
         value: eventAttended,
-        change: "+3 this month",
+        change: "+3 this month --- remaining",
         changeType: "positive",
         icon: Calendar,
       },
       {
         title: "Total Points",
-        value: "2,450",
-        change: "+180 this week",
+        value: points,
+        change: `${Number(points) >= 100 ? "Great job!" : "Keep going!"}`,
         changeType: "positive",
         icon: Star,
       },
       {
-        title: "Certificates",
-        value: "12",
-        change: "2 pending",
+        title: "Badges Earned",
+        value: badges,
+        change: ``,
         changeType: "neutral",
         icon: Award,
       },
       {
         title: "Leaderboard Rank",
-        value: "#15",
-        change: "Up 5 places",
-        changeType: "positive",
+        value: rank,
+        change: `${rank === "Unranked" || !rank
+          ? "Participate more to get ranked!"
+          : "Go higher!"
+          }`,
+        changeType:
+          rank === "Unranked" || !rank ? "negative" : "positive",
         icon: Trophy,
       },
     ])
-  }, [eventAttended])
+  }, [eventAttended, points, badges, rank])
+
 
   return (
     <div className="space-y-8">
@@ -244,12 +275,12 @@ export default function DashboardPage() {
                   View Leaderboard
                 </Button>
               </Link>
-              <Link href="/dashboard/my-events">
+              {/* <Link href="/dashboard/my-events">
                 <Button variant="outline" className="w-full justify-start bg-transparent">
                   <Award className="mr-2 h-4 w-4" />
                   My Certificates
                 </Button>
-              </Link>
+              </Link> */}
             </div>
           </div>
         </div>

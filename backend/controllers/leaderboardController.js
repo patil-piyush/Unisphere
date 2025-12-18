@@ -1,4 +1,5 @@
 const MonthlyPoints = require("../models/MonthlyPoints");
+const User = require("../models/user");
 const { getCurrentMonthYear } = require("../config/dateUtils");
 
 /**
@@ -26,7 +27,7 @@ const getMonthlyLeaderboard = async (req, res) => {
       .limit(10);
 
     res.status(200).json({
-      month,
+      month:month+1,
       year,
       leaderboard
     });
@@ -59,7 +60,7 @@ const getUserMonthlyPoints = async (req, res) => {
     });
 
     res.status(200).json({
-      month,
+      month:month+1,
       year,
       points: record ? record.points : 0
     });
@@ -69,7 +70,67 @@ const getUserMonthlyPoints = async (req, res) => {
   }
 };
 
+const getMonthlyLeaderboardRank = async (req, res) => {
+  try {
+    let { month, year } = req.query;
+    const userId = req.userId;
+    // must be set by auth middleware
+
+    if (!userId) {
+      return res.status(401).json({ error: "Unauthenticated (no userId)" });
+    }
+
+    if (!month || !year) {
+      const current = getCurrentMonthYear(); // must return month 0–11 if DB stores 0–11
+      month = current.month;
+      year = current.year;
+    }
+
+    const monthNum = Number(month);
+    const yearNum = Number(year);
+
+    console.log("RANK debug params:", { monthNum, yearNum, userId });
+
+    const userEntry = await MonthlyPoints.findOne({
+      user_id: userId,
+      month: monthNum,
+      year: yearNum,
+    }).select("points");
+
+    console.log("RANK userEntry:", userEntry);
+
+    if (!userEntry) {
+      return res.status(200).json({
+        month: monthNum + 1,
+        year: yearNum,
+        rank: null,
+        points: 0,
+      });
+    }
+
+    const countAbove = await MonthlyPoints.countDocuments({
+      user_id: { $ne: userId }, // optional: exclude self
+      month: monthNum,
+      year: yearNum,
+      points: { $gt: userEntry.points },
+    });
+
+    const rank = countAbove + 1;
+
+    return res.status(200).json({
+      month: monthNum + 1,
+      year: yearNum,
+      rank,
+      points: userEntry.points,
+    });
+  } catch (error) {
+    console.error("RANK error:", error);
+    return res.status(500).json({ error: error.message });
+  }
+};
+
 module.exports = {
   getMonthlyLeaderboard,
-  getUserMonthlyPoints
+  getUserMonthlyPoints,
+  getMonthlyLeaderboardRank
 };
