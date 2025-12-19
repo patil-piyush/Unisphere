@@ -1,33 +1,44 @@
-const User = require('../models/User');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const Club = require('../models/club');
+require("dotenv").config();
 
 const adminLogin = async (req, res) => {
   try {
     const { email, password } = req.body;
 
     // 1️⃣ Check user exists
-    const user = await User.findOne({ email });
-    if (!user) {
-      return res.status(404).json({ message: "User not found" });
-    }
+    // const user = await User.findOne({ email });
+    // if (!user) {
+    //   return res.status(404).json({ message: "User not found" });
+    // }
 
-    // 2️⃣ Check admin role
-    if (user.role !== "admin") {
-      return res.status(403).json({ message: "Unauthorized access" });
-    }
+    // // 2️⃣ Check admin role
+    // if (user.role !== "admin") {
+    //   return res.status(403).json({ message: "Unauthorized access" });
+    // }
 
     // 3️⃣ Verify password
-    const valid = await bcrypt.compare(password, user.password);
-    if (!valid) {
-      return res.status(401).json({ message: "Invalid credentials" });
-    }
+    // const valid = await bcrypt.compare(password, user.password);
+    // if (!valid) {
+    //   return res.status(401).json({ message: "Invalid credentials" });
+    // }
+
+
+    // Using env variables for admin credentials
+      if (email !== process.env.ADMIN_EMAIL) {
+        return res.status(404).json({ message: "Invalid Credentials"});
+      }
+
+      const isValid = await bcrypt.compare(password, process.env.ADMIN_PASSWORD_HASH);
+      if (!isValid) {
+        return res.status(401).json({ message: "Invalid Credentials" });
+      }
 
     // 4️⃣ Create admin token (VERY IMPORTANT)
     const token = jwt.sign(
       {
-        id: user._id,
+        //id: user._id,
         role: "admin",
         type: "admin"
       },
