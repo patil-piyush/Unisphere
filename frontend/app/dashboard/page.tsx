@@ -205,13 +205,15 @@ export default function DashboardPage() {
           </div>
           <div className="grid md:grid-cols-2 gap-4">
             {recommendedEventsList.slice(0, 2).map((event) => (
-              <EventCard
-                key={event._id || event.id || "unknown"}
-                {...{
-                  ...event,
-                  _id: event._id || event.id || "unknown",
-                }}
-              />
+              <Link href="/dashboard/events" >
+                <EventCard
+                  key={event._id || event.id || "unknown"}
+                  {...{
+                    ...event,
+                    _id: event._id || event.id || "unknown",
+                  }}
+                />
+              </Link>
             ))}
           </div>
         </div>
