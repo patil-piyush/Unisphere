@@ -15,16 +15,20 @@ import axios from "axios"
 const BackendURL =
   process.env.NEXT_PUBLIC_BACKEND_API_URL || "http://localhost:5000"
 
+// MATCH API RESPONSE
 type ApiLeaderboardEntry = {
-  _id: string
-  user_id: {
-    _id: string
-    name: string
-    email: string
-  }
+  name: string
+  department?: string
+  profileIMG?: string
+  points: number
+  eventsCount: number
+  badgesCount: number
+}
+
+type LeaderboardApiResponse = {
   month: number
   year: number
-  points: number
+  leaderboard: ApiLeaderboardEntry[]
 }
 
 type LeaderboardEntry = {
@@ -49,28 +53,24 @@ export default function LeaderboardPage() {
         setLoading(true)
         setError(null)
 
-        const res = await axios.get(
+        const res = await axios.get<LeaderboardApiResponse>(
           `${BackendURL}/api/gamification/leaderboard/monthly`,
-          {
-            withCredentials: true,
-          },
+          { withCredentials: true },
         )
 
-        const data = res.data as {
-          month: number
-          year: number
-          leaderboard: ApiLeaderboardEntry[]
-        }
+        const data = res.data
 
-        const mapped: LeaderboardEntry[] = data.leaderboard.map(
+        const mapped: LeaderboardEntry[] = (data.leaderboard || []).map(
           (item, index) => ({
             rank: index + 1,
-            name: item.user_id?.name ?? "Unknown",
-            avatar: "/placeholder.svg?height=40&width=40",
-            department: "Unknown",
+            name: item.name ?? "Unknown",
+            avatar:
+              item.profileIMG ??
+              "/placeholder.svg?height=40&width=40",
+            department: item.department ?? "Unknown",
             points: item.points,
-            eventsAttended: 0,
-            badges: 0,
+            eventsAttended: item.eventsCount ?? 0,
+            badges: item.badgesCount ?? 0,
           }),
         )
 
@@ -138,7 +138,7 @@ export default function LeaderboardPage() {
               </div>
             )}
 
-            {/* 1st Place (always exists when length > 0) */}
+            {/* 1st Place */}
             <div className="flex flex-col items-center">
               <div className="relative">
                 <div className="w-24 h-24 md:w-32 md:h-32 rounded-full overflow-hidden border-4 border-yellow-500 shadow-lg shadow-yellow-500/30">
@@ -213,7 +213,7 @@ export default function LeaderboardPage() {
         </div>
       </div>
 
-      {/* Leaderboard Table – same design, now dynamic */}
+      {/* Leaderboard Table */}
       <LeaderboardTable entries={entries} />
 
       {loading && (

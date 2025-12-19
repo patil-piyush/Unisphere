@@ -87,6 +87,7 @@ const getMonthlyLeaderboard = async (req, res) => {
           _id: 0,
           name: "$user.name",
           department: "$user.department",
+          profileIMG: "$user.profileIMG",
           points: "$points",
           eventsCount: { $size: "$events" },
           badgesCount: { $size: "$badges" }
