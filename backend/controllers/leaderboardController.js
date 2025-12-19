@@ -1,6 +1,7 @@
 const MonthlyPoints = require("../models/MonthlyPoints");
 const User = require("../models/user");
 const { getCurrentMonthYear } = require("../config/dateUtils");
+const Attendance = require("../models/attendance");
 
 /**
  * 1️⃣ Monthly Leaderboard
@@ -18,16 +19,86 @@ const getMonthlyLeaderboard = async (req, res) => {
       year = current.year;
     }
 
-    const leaderboard = await MonthlyPoints.find({
-      month: Number(month),
-      year: Number(year)
-    })
-      .populate("user_id", "name email")
-      .sort({ points: -1 })
-      .limit(10);
+    const leaderboard = await MonthlyPoints.aggregate([
+      {
+        $match: {
+          month: Number(month),
+          year: Number(year)
+        }
+      },
+
+      // Join user
+      {
+        $lookup: {
+          from: "users",
+          localField: "user_id",
+          foreignField: "_id",
+          as: "user"
+        }
+      },
+      { $unwind: "$user" },
+
+      // Join attendance (event count)
+      {
+        $lookup: {
+          from: "attendances",
+          let: { userId: "$user_id" },
+          pipeline: [
+            {
+              $match: {
+                $expr: {
+                  $eq: ["$user_id", "$$userId"]
+                }
+              }
+            },
+            {
+              $match: {
+                check_in_time: {
+                  $gte: new Date(year, month, 1),
+                  $lt: new Date(year, Number(month) + 1, 1)
+                }
+              }
+            }
+          ],
+          as: "events"
+        }
+      },
+
+      // Join badges (monthly only)
+      {
+        $lookup: {
+          from: "badges",
+          let: { points: "$points" },
+          pipeline: [
+            {
+              $match: {
+                isPermanent: false,
+                $expr: { $lte: ["$requiredPoints", "$$points"] }
+              }
+            }
+          ],
+          as: "badges"
+        }
+      },
+
+      // Shape final output
+      {
+        $project: {
+          _id: 0,
+          name: "$user.name",
+          department: "$user.department",
+          points: "$points",
+          eventsCount: { $size: "$events" },
+          badgesCount: { $size: "$badges" }
+        }
+      },
+
+      { $sort: { points: -1 } },
+      { $limit: 10 }
+    ]);
 
     res.status(200).json({
-      month:month+1,
+      month: Number(month) + 1,
       year,
       leaderboard
     });
