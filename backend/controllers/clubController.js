@@ -2,6 +2,7 @@ const Club = require('../models/club');
 const ClubMember = require('../models/clubMember'); // You forgot to import this
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
+const cloudinary = require('../config/cloudinary');
 
 // =================================================
 // CREATE A NEW CLUB
@@ -10,47 +11,40 @@ const createClub = async (req, res) => {
   try {
     const { name, description, email, password } = req.body;
 
+    if (!name || !description || !email || !password) {
+      return res.status(400).json({ message: "All fields are required" });
+    }
+
     const hashedPassword = await bcrypt.hash(password, 10);
 
-    // upload logo if provided
-    let logoURL;
+    let logo;
     if (req.file) {
-      // using buffer upload
-      const uploaded = await cloudinary.uploader.upload_stream(
-        {
-          folder: "club/logos",
-          resource_type: "image",
-        },
-        (error, result) => {
-          if (error) console.log(error);
-          return result;
-        }
-      );
+      logo = await new Promise((resolve, reject) => {
+        const stream = cloudinary.uploader.upload_stream(
+          {
+            folder: "club/logos",
+            resource_type: "image",
+          },
+          (error, result) => {
+            if (error) return reject(error);
+            resolve(result.secure_url);
+          }
+        );
+        stream.end(req.file.buffer);
+      });
+    }
 
-      logoURL = await new Promise((resolve, reject) => {
-          const stream = cloudinary.uploader.upload_stream(
-            {
-              folder: "club/logos",
-              resource_type: "image",
-            },
-            (error, result) => {
-              if (error) return reject(error);
-              resolve(result.secure_url);
-            }
-          );
-          stream.end(req.file.buffer);
-        });
-      }
-
-    const newClub = await Club.create({   // <-- fixed creat to create
+    const newClub = await Club.create({
       name,
       description,
-      logoURL : logoURL || undefined,
+      logoURL: logo || undefined,
       email,
-      password: hashedPassword
+      password: hashedPassword,
     });
 
-    res.status(201).json({ message: "Club registered successfully", club: newClub });
+    res
+      .status(201)
+      .json({ message: "Club registered successfully", club: newClub });
   } catch (error) {
     res.status(400).json({ error: error.message });
   }

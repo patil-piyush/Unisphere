@@ -117,12 +117,11 @@ export default function ClubEventsPage() {
             const percentage =
               maxAttendees > 0 ? (attendees / maxAttendees) * 100 : 0
 
-            const status =
-              typeof event.isClosed === "boolean"
-                ? event.isClosed
-                  ? "Closed"
-                  : "Confirmed"
-                : event.status || "Planning"
+            const status = event.status
+              ? event.status
+              : event.isClosed
+              ? "Closed"
+              : "Pending"
 
             return (
               <div

@@ -1,119 +1,141 @@
 "use client"
 
-import { BarChart3, Users, Calendar, DollarSign, TrendingUp, AlertCircle, LucideIcon } from "lucide-react"
+import {
+  BarChart3,
+  Users,
+  Calendar,
+  DollarSign,
+  TrendingUp,
+  AlertCircle,
+  LucideIcon,
+} from "lucide-react"
 import { StatsCard } from "@/components/dashboard/stats-card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
-import { useState, useEffect, use } from "react"
+import { useState, useEffect } from "react"
 import Link from "next/link"
 import axios from "axios"
-const BackendURL = process.env.NEXT_PUBLIC_BACKEND_API_URL;
 
+const BackendURL = process.env.NEXT_PUBLIC_BACKEND_API_URL
 
-const pendingApproval = [
-  { id: 1, type: "Event", name: "Inter-College Hackathon", club: "Tech Club", date: "Dec 20" },
-  { id: 2, type: "Event", name: "Cultural Night", club: "Cultural Committee", date: "Dec 25" },
-  { id: 3, type: "Club", name: "Robotics Club", requestedBy: "Prof. Smith", date: "Dec 10" },
-]
+type PendingApprovalItem = {
+  id: string
+  type: "Event"
+  name: string
+  club: string
+  date: string
+}
 
-const recentActivit = [
+type ActivityItem = {
+  id: number
+  action: string
+  by: string
+  time: string
+}
+
+const recentActivit: ActivityItem[] = [
   { id: 1, action: "New event created", by: "Tech Club", time: "2 hours ago" },
   { id: 2, action: "Club registration", by: "Photography Club", time: "4 hours ago" },
   { id: 3, action: "Report submitted", by: "Finance Dept", time: "1 day ago" },
 ]
 
 export default function AdminDashboard() {
-
-  const [stats, setStats] = useState<Array<{
-    title: string;
-    value: string | number;
-    change: string;
-    changeType: "positive" | "neutral" | "negative";
-    icon: LucideIcon;
-  }>>([]);
-  const [pendingApprovals, setPendingApprovals] = useState<Array<{
-    id: number;
-    type: string;
-    name: string;
-    club?: string;
-    requestedBy?: string;
-    date: string;
-  }>>([]);
-  const [recentActivity, setRecentActivity] = useState<Array<{
-    id: number;
-    action: string;
-    by: string;
-    time: string;
-  }>>([]);
-  const [totalStudents, setTotalStudents] = useState(0);
-  const [activeClubs, setActiveClubs] = useState(0);
-  const [eventsThisMonth, setEventsThisMonth] = useState(0);
-  // const [totalBudget, setTotalBudget] = useState(0);
-
+  const [stats, setStats] = useState<
+    {
+      title: string
+      value: string | number
+      icon: LucideIcon
+    }[]
+  >([])
+  const [pendingApprovals, setPendingApprovals] = useState<PendingApprovalItem[]>([])
+  const [recentActivity] = useState<ActivityItem[]>(recentActivit)
+  const [totalStudents, setTotalStudents] = useState(0)
+  const [activeClubs, setActiveClubs] = useState(0)
+  const [eventsThisMonth, setEventsThisMonth] = useState(0)
 
   useEffect(() => {
-    // Fetch dashboard data from API or database
-    axios.get(`${BackendURL}/api/admin/users`, { withCredentials: true })
-      .then(response => {
-        const data = response.data;
-        console.log("Total Students data:", data.count);
-        setTotalStudents(data.count);
+    if (!BackendURL) return
+
+    // total students
+    axios
+      .get(`${BackendURL}/api/admin/users`, { withCredentials: true })
+      .then((response) => {
+        setTotalStudents(response.data.count ?? 0)
       })
-      .catch(error => {
-        console.error("Error fetching Total Students:", error);
-      });
-
-    axios.get(`${BackendURL}/api/admin/`, { withCredentials: true })
-      .then(response => {
-        const data = response.data;
-        console.log("active clubs:", data.count);
-        setActiveClubs(data.count);
+      .catch((error) => {
+        console.error("Error fetching Total Students:", error)
       })
-      .catch(error => {
-        console.error("Error fetching Active Clubs:", error);
-      });
 
-    axios.get(`${BackendURL}/api/admin/events/current-month/count`, { withCredentials: true })
-      .then(response => {
-        const data = response.data;
-        console.log("Events This Month data:", data.count);
-        setEventsThisMonth(data.count);
+    // active clubs
+    axios
+      .get(`${BackendURL}/api/admin/`, { withCredentials: true })
+      .then((response) => {
+        setActiveClubs(response.data.count ?? 0)
       })
-      .catch(error => {
-        console.error("Error fetching Active Clubs:", error);
-      });
+      .catch((error) => {
+        console.error("Error fetching Active Clubs:", error)
+      })
 
+    // events this month
+    axios
+      .get(`${BackendURL}/api/admin/events/current-month/count`, {
+        withCredentials: true,
+      })
+      .then((response) => {
+        setEventsThisMonth(response.data.count ?? 0)
+      })
+      .catch((error) => {
+        console.error("Error fetching Events This Month:", error)
+      })
 
-    setStats([{
-      title: "Total Students",
-      value: totalStudents,
-      change: "+245 this semester",
-      changeType: "positive" as const,
-      icon: Users,
-    },
-    {
-      title: "Active Clubs",
-      value: activeClubs,
-      change: `${pendingApprovals.length} pending approval`,
-      changeType: "neutral" as const,
-      icon: BarChart3,
-    },
-    {
-      title: "Events This Month",
-      value: eventsThisMonth,
-      change: "+15 vs last month",
-      changeType: "positive" as const,
-      icon: Calendar,
-    },
-    {
-      title: "Total Budget",
-      value: "rs 125K",
-      change: "rs 18K remaining",
-      changeType: "neutral" as const,
-      icon: DollarSign,
-    }])
+    // pending approvals (events with status=pending)
+    axios
+      .get(`${BackendURL}/api/admin/events/pending`, {
+        withCredentials: true,
+      })
+      .then((response) => {
+        const events = response.data as any[]
+        const mapped: PendingApprovalItem[] = events.map((e) => ({
+          id: e._id,
+          type: "Event",
+          name: e.title,
+          club: e.clubName || e.club_id?.name || "Unknown Club",
+          date: new Date(e.start_date).toLocaleDateString(undefined, {
+            month: "short",
+            day: "numeric",
+          }),
+        }))
+        setPendingApprovals(mapped)
+      })
+      .catch((error) => {
+        console.error("Error fetching pending approvals:", error)
+      })
+  }, [])
 
-  }, [totalStudents, activeClubs, eventsThisMonth]);
+  useEffect(() => {
+    setStats([
+      {
+        title: "Total Students",
+        value: totalStudents,
+        icon: Users,
+      },
+      {
+        title: "Active Clubs",
+        value: activeClubs,
+        icon: BarChart3,
+      },
+      {
+        title: "Events This Month",
+        value: eventsThisMonth,
+        icon: Calendar,
+      },
+      {
+        title: "Total Budget",
+        value: "₹125K",
+        icon: DollarSign,
+      },
+    ])
+  }, [totalStudents, activeClubs, eventsThisMonth, pendingApprovals.length])
 
   return (
     <div className="space-y-8">
@@ -121,7 +143,9 @@ export default function AdminDashboard() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-4xl font-bold mb-2">Dashboard</h1>
-          <p className="text-muted-foreground">College-wide event management overview</p>
+          <p className="text-muted-foreground">
+            College-wide event management overview
+          </p>
         </div>
         <Link href="/admin/approvals">
           <Button className="bg-primary hover:bg-primary/90">
@@ -151,27 +175,47 @@ export default function AdminDashboard() {
             </Link>
           </div>
           <div className="space-y-4">
+            {pendingApprovals.length === 0 && (
+              <p className="text-sm text-muted-foreground">
+                No pending approvals at the moment.
+              </p>
+            )}
             {pendingApprovals.map((item) => (
-              <div key={item.id} className="flex items-center justify-between p-4 rounded-lg border border-border/30 hover:border-border/50 transition-colors">
-                <div className="flex-1">
-                  <div className="flex items-center gap-3 mb-1">
-                    <Badge variant={item.type === "Event" ? "default" : "secondary"}>{item.type}</Badge>
-                    <h3 className="font-semibold">{item.name}</h3>
+              <Link
+                key={item.id}
+                href={`/admin/approvals?eventId=${item.id}`}
+                className="block"
+              >
+                <div className="flex items-center justify-between p-4 rounded-lg border border-border/30 hover:border-border/50 hover:bg-muted/10 transition-colors cursor-pointer">
+                  <div className="flex-1">
+                    <div className="flex items-center gap-3 mb-1">
+                      <Badge variant="default">{item.type}</Badge>
+                      <h3 className="font-semibold">{item.name}</h3>
+                    </div>
+                    <p className="text-sm text-muted-foreground">
+                      Club: {item.club}
+                    </p>
                   </div>
-                  <p className="text-sm text-muted-foreground">{item.type === "Event" ? `Club: ${item.club}` : `Requested by: ${item.requestedBy}`}</p>
-                </div>
-                <div className="text-right">
-                  <p className="text-xs text-muted-foreground mb-2">{item.date}</p>
-                  <div className="flex gap-2">
-                    <Button size="sm" variant="outline" className="h-8">
-                      Reject
-                    </Button>
-                    <Button size="sm" className="h-8">
-                      Approve
-                    </Button>
+                  <div className="text-right">
+                    <p className="text-xs text-muted-foreground mb-2">
+                      {item.date}
+                    </p>
+                    <div className="flex gap-2 justify-end">
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="h-8"
+                        type="button"
+                      >
+                        Reject
+                      </Button>
+                      <Button size="sm" className="h-8" type="button">
+                        Approve
+                      </Button>
+                    </div>
                   </div>
                 </div>
-              </div>
+              </Link>
             ))}
           </div>
         </div>
@@ -181,9 +225,14 @@ export default function AdminDashboard() {
           <h2 className="text-xl font-bold mb-6">Recent Activity</h2>
           <div className="space-y-4">
             {recentActivity.map((item) => (
-              <div key={item.id} className="pb-4 border-b border-border/30 last:border-0">
+              <div
+                key={item.id}
+                className="pb-4 border-b border-border/30 last:border-0"
+              >
                 <p className="font-medium text-sm">{item.action}</p>
-                <p className="text-xs text-muted-foreground mt-1">{item.by}</p>
+                <p className="text-xs text-muted-foreground mt-1">
+                  {item.by}
+                </p>
                 <p className="text-xs text-muted-foreground">{item.time}</p>
               </div>
             ))}

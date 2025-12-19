@@ -75,35 +75,61 @@ const createEvent = async (req, res) => {
       price,
     } = req.body;
 
+    // Debug: see what actually arrives
+    console.log("Create event body dates:", { start_date, end_date });
 
     // Basic validation based on schema
-    if (!title || !description || !venue || !start_date || !start_time || !end_date || !end_time || !max_capacity) {
+    if (
+      !title ||
+      !description ||
+      !venue ||
+      !start_date ||
+      !start_time ||
+      !end_date ||
+      !end_time ||
+      !max_capacity
+    ) {
       return res.status(400).json({ error: "Missing required fields." });
     }
 
-    // Convert numeric and date/time values
     const maxCapacityNum = Number(max_capacity);
     if (Number.isNaN(maxCapacityNum) || maxCapacityNum <= 0) {
-      return res.status(400).json({ error: "max_capacity must be a positive number." });
+      return res
+        .status(400)
+        .json({ error: "max_capacity must be a positive number." });
     }
 
+    // 🔹 validate and parse dates
     const startDateObj = new Date(start_date);
     const endDateObj = new Date(end_date);
 
-    // normalize to start of day
+    if (Number.isNaN(startDateObj.getTime())) {
+      return res
+        .status(400)
+        .json({ error: "Invalid start_date format. Use YYYY-MM-DD." });
+    }
+    if (Number.isNaN(endDateObj.getTime())) {
+      return res
+        .status(400)
+        .json({ error: "Invalid end_date format. Use YYYY-MM-DD." });
+    }
+
     const today = new Date();
     today.setHours(0, 0, 0, 0);
     const startDay = new Date(startDateObj);
     startDay.setHours(0, 0, 0, 0);
 
     if (endDateObj < startDateObj) {
-      return res.status(400).json({ error: "End date must be on or after start date." });
+      return res
+        .status(400)
+        .json({ error: "End date must be on or after start date." });
     }
 
     if (startDay < today) {
-      return res.status(400).json({ error: "Event start date must be today or in the future." });
+      return res
+        .status(400)
+        .json({ error: "Event start date must be today or in the future." });
     }
-
 
     // Handle coordinates
     const lat = Number(location_lat);
@@ -113,24 +139,9 @@ const createEvent = async (req, res) => {
       return res.status(400).json({ error: "Invalid location coordinates." });
     }
 
-    // Upload banner image if provided
-    let bannerURL;
+    let banner;
     if (req.file) {
-      // using buffer upload
-      const uploaded = await cloudinary.uploader.upload_stream(
-        {
-          folder: "events/banners",
-          resource_type: "image",
-        },
-        (error, result) => {
-          if (error) console.log(error);
-          return result;
-        }
-      );
-
-      // cloudinary.uploader.upload_stream is callback-based; easier:
-
-      bannerURL = await new Promise((resolve, reject) => {
+      banner = await new Promise((resolve, reject) => {
         const stream = cloudinary.uploader.upload_stream(
           {
             folder: "events/banners",
@@ -139,19 +150,19 @@ const createEvent = async (req, res) => {
           (error, result) => {
             if (error) return reject(error);
             resolve(result.secure_url);
-          }
+          },
         );
         stream.end(req.file.buffer);
       });
     }
-    
+
     const event = await Event.create({
-      club_id: req.clubId, // set by auth middleware from JWT
+      club_id: req.clubId, // set by auth middleware
       clubName,
       title,
       description,
-      bannerURL: bannerURL || undefined,
-      category: category || undefined, // will default to 'Seminar' if undefined
+      bannerURL: banner || undefined,
+      category: category || undefined,
       venue,
       start_time,
       start_date: startDateObj,
@@ -161,7 +172,7 @@ const createEvent = async (req, res) => {
       price: Number(price) || 0,
       location_coordinates: {
         type: "Point",
-        coordinates: [lng, lat], // GeoJSON: [longitude, latitude]
+        coordinates: [lng, lat],
       },
     });
 
@@ -171,6 +182,7 @@ const createEvent = async (req, res) => {
     res.status(500).send({ error: "Failed to create event" });
   }
 };
+
 
 // update event details both president and members
 const updateEvent = async (req, res) => {

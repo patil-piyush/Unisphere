@@ -1,7 +1,8 @@
 const express = require('express');
 const router = express.Router();
-
+const upload = require('../middlewares/upload');
 const clubAuth = require('../middlewares/clubAuthMiddleware');
+const { adminAuthMiddleware } = require("../middlewares/adminAuthMiddleware");
 
 const {
     createClub,
@@ -21,11 +22,11 @@ const {
 } = require('../controllers/clubMemberController');
 
 // public
-router.post('/register', createClub);
+router.post('/register', upload.single("logo"), adminAuthMiddleware, createClub);
 router.post('/login', loginClub);
 
 // Auth Club
-router.post('/logout', clubAuth, logoutClub);
+router.post('/logout', clubAuth, logoutClub);   
 router.put('/change-password', clubAuth, changeClubPassword);
 // router.get('/', clubAuth, getAllClubs);
 router.put('/:id', clubAuth, updateClub);

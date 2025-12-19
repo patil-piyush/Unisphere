@@ -63,7 +63,7 @@ export default function ClubsPage() {
           id: c._id,
           name: c.name,
           description: c.description,
-          image: c.image || "/placeholder.svg",
+          image: c.logoURL || "/placeholder.svg",
           members: c.membersCount ?? 0,
           events: c.eventsCount ?? 0,
           category: c.category || "Other",
@@ -73,7 +73,7 @@ export default function ClubsPage() {
       .catch((error) => {
         console.error("Error fetching Active Clubs:", error)
       })
-  }, [])
+  }, [clubs])
 
 
 

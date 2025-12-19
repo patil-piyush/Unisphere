@@ -22,7 +22,10 @@ const eventSchema = new mongoose.Schema({
     required: true,
   },
 
-  bannerURL: String,
+  bannerURL:{
+    type: String,
+    default: "",
+  },
 
   category: {
     type: String,
@@ -92,7 +95,7 @@ const eventSchema = new mongoose.Schema({
     default: 0,
   },
 
-  /* 🔽🔽🔽 EVENT APPROVAL SYSTEM 🔽🔽🔽 */
+  /* EVENT APPROVAL SYSTEM */
 
   status: {
     type: String,

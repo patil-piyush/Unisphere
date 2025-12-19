@@ -61,7 +61,7 @@ export default function CreateEventPage() {
     end_time: "",
     max_capacity: "",
     googleMapsUrl: "",
-    price:0,
+    price: 0,
     category: "Seminar", // matches schema default
   })
   const [bannerFile, setBannerFile] = useState<File | null>(null)
@@ -70,27 +70,27 @@ export default function CreateEventPage() {
   const [success, setSuccess] = useState<string | null>(null)
   const [clubName, setClubName] = useState<string | null>(null)
 
-
   useEffect(() => {
-    const response = axios.get(`${BACKEND_API_URL}/api/clubs/`, {
-      withCredentials: true,
-    })
-    response.then((res) => {
-      const cName = res.data.name
-      // console.log("Club Name:", res.data.name)
-      setClubName(cName)
-    })
+    axios
+      .get(`${BACKEND_API_URL}/api/clubs/`, { withCredentials: true })
+      .then((res) => {
+        const cName = res.data.name
+        setClubName(cName)
+        setFormData((prev) => ({ ...prev, clubName: cName }))
+      })
+      .catch((err) => {
+        console.error("Failed to fetch club name", err)
+      })
   }, [])
-  
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+
+
+  const handleChange = (
+    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>,
+  ) => {
     const { name, value } = e.target
     setFormData((prev) => ({ ...prev, [name]: value }))
-
-    if (clubName) {
-      setFormData((prev) => ({ ...prev, clubName: clubName }))
-      // console.log("Club Name in submit:", formData.clubName)
-    }
   }
+
 
 
 
@@ -104,7 +104,7 @@ export default function CreateEventPage() {
     setError(null)
     setSuccess(null)
 
-    
+
     if (!formData.title || !formData.description || !formData.venue) {
       setError("Please fill in title, description, and venue.")
       return

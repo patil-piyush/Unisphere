@@ -55,7 +55,7 @@ export default function CreateClubPage() {
       data.append("logo", logoFile) // field name must match backend expectation[web:193][web:195]
 
       const res = await axios.post(
-        `${BackendURL}/api/admin/register`,
+        `${BackendURL}/api/clubs/register`,
         data,
         {
           withCredentials: true,
