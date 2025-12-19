@@ -49,15 +49,6 @@ type CommentWithReplies = {
 
 
 
-
-const participants = [
-  { name: "John Doe", department: "Computer Science", avatar: "/student-studying.png" },
-  { name: "Jane Smith", department: "Electronics", avatar: "/diverse-student-studying.png" },
-  { name: "Mike Johnson", department: "Mechanical", avatar: "/diverse-students-studying.png" },
-  { name: "Emily Brown", department: "Computer Science", avatar: "/diverse-student-group.png" },
-  { name: "David Wilson", department: "IT", avatar: "/diverse-student-group.png" },
-]
-
 export default function EventDetailPage() {
   const params = useParams<{ id: string }>()
   const eventId = params.id
@@ -396,7 +387,6 @@ export default function EventDetailPage() {
             <TabsList className="w-full justify-start">
               <TabsTrigger value="overview">Overview</TabsTrigger>
               <TabsTrigger value="discussion">Discussion</TabsTrigger>
-              <TabsTrigger value="participants">Participants</TabsTrigger>
             </TabsList>
 
             <TabsContent value="overview" className="space-y-6 mt-6">
@@ -508,43 +498,6 @@ export default function EventDetailPage() {
                     </p>
                   )}
                 </div>
-              </div>
-            </TabsContent>
-
-
-            <TabsContent value="participants" className="space-y-6 mt-6">
-              <div className="glass rounded-2xl p-6">
-                <div className="flex items-center justify-between mb-4">
-                  <h2 className="text-xl font-semibold">Participants</h2>
-                  <Badge variant="secondary">{mapped.attendees} registered</Badge>
-                </div>
-                <div className="space-y-3">
-                  {participants.map((participant, index) => (
-                    <div
-                      key={index}
-                      className="flex items-center gap-3 p-3 rounded-xl hover:bg-secondary/50 transition-colors"
-                    >
-                      <Avatar>
-                        <AvatarImage src={participant.avatar || "/placeholder.svg"} />
-                        <AvatarFallback>
-                          {participant.name
-                            .split(" ")
-                            .map((n) => n[0])
-                            .join("")}
-                        </AvatarFallback>
-                      </Avatar>
-                      <div>
-                        <p className="font-medium">{participant.name}</p>
-                        <p className="text-sm text-muted-foreground">
-                          {participant.department}
-                        </p>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-                <Button variant="outline" className="w-full mt-4 bg-transparent">
-                  View All Participants
-                </Button>
               </div>
             </TabsContent>
           </Tabs>

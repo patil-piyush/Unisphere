@@ -48,22 +48,12 @@ type CommentWithReplies = {
 }
 
 
-
-
-const participants = [
-  { name: "John Doe", department: "Computer Science", avatar: "/student-studying.png" },
-  { name: "Jane Smith", department: "Electronics", avatar: "/diverse-student-studying.png" },
-  { name: "Mike Johnson", department: "Mechanical", avatar: "/diverse-students-studying.png" },
-  { name: "Emily Brown", department: "Computer Science", avatar: "/diverse-student-group.png" },
-  { name: "David Wilson", department: "IT", avatar: "/diverse-student-group.png" },
-]
-
 export default function EventDetailPage() {
   const params = useParams<{ id: string }>()
   const eventId = params.id
 
   // replace static discussions array with state
-  const [comments, setComments] = useState<CommentWithReplies[]>([])  
+  const [comments, setComments] = useState<CommentWithReplies[]>([])
   const [commentLoading, setCommentLoading] = useState(false)
   const [commentError, setCommentError] = useState<string | null>(null)
   // track which comment you're replying to (optional)
@@ -116,55 +106,55 @@ export default function EventDetailPage() {
         console.error("Failed to fetch registrations", err)
       })
 
-      const fetchComments = async () => {
-        try {
-          setCommentLoading(true)
-          setCommentError(null)
-      
-          const res = await axios.get<ApiComment[]>(
-            `${BackendURL}/api/event-comments/${eventId}`,
-            { withCredentials: true },
-          )
-      
-          const raw = res.data || []
-      
-          // normalize each comment
-          const flat: CommentWithReplies[] = raw.map((c) => ({
-            _id: c._id,
-            user: {
-              name: c.user_id?.name ?? "Unknown User",
-              avatar: c.user_id?.profileIMG,
-            },
-            content: c.content,
-            createdAt: c.createdAt,
-            likesCount: c.likes?.length ?? 0,
-            parent_comment_id: c.parent_comment_id ?? null,
-            replies: [],
-          }))
-      
-          const map = new Map<string, CommentWithReplies>()
-          flat.forEach((c) => {
-            map.set(c._id, c)
-          })
-      
-          const roots: CommentWithReplies[] = []
-          flat.forEach((c) => {
-            if (c.parent_comment_id && map.has(c.parent_comment_id)) {
-              map.get(c.parent_comment_id)!.replies.push(c)
-            } else {
-              roots.push(c)
-            }
-          })
-      
-          setComments(roots)
-        } catch (err) {
-          console.error("Failed to fetch comments", err)
-          setCommentError("Failed to load discussion.")
-        } finally {
-          setCommentLoading(false)
-        }
+    const fetchComments = async () => {
+      try {
+        setCommentLoading(true)
+        setCommentError(null)
+
+        const res = await axios.get<ApiComment[]>(
+          `${BackendURL}/api/event-comments/${eventId}`,
+          { withCredentials: true },
+        )
+
+        const raw = res.data || []
+
+        // normalize each comment
+        const flat: CommentWithReplies[] = raw.map((c) => ({
+          _id: c._id,
+          user: {
+            name: c.user_id?.name ?? "Unknown User",
+            avatar: c.user_id?.profileIMG,
+          },
+          content: c.content,
+          createdAt: c.createdAt,
+          likesCount: c.likes?.length ?? 0,
+          parent_comment_id: c.parent_comment_id ?? null,
+          replies: [],
+        }))
+
+        const map = new Map<string, CommentWithReplies>()
+        flat.forEach((c) => {
+          map.set(c._id, c)
+        })
+
+        const roots: CommentWithReplies[] = []
+        flat.forEach((c) => {
+          if (c.parent_comment_id && map.has(c.parent_comment_id)) {
+            map.get(c.parent_comment_id)!.replies.push(c)
+          } else {
+            roots.push(c)
+          }
+        })
+
+        setComments(roots)
+      } catch (err) {
+        console.error("Failed to fetch comments", err)
+        setCommentError("Failed to load discussion.")
+      } finally {
+        setCommentLoading(false)
       }
-      
+    }
+
     fetchComments()
   }, [eventId])
 
@@ -265,16 +255,16 @@ export default function EventDetailPage() {
     try {
       const body: any = { content: newComment.trim() }
       if (replyTo) body.parent_comment_id = replyTo
-  
+
       const res = await axios.post(
         `${BackendURL}/api/event-comments/${eventId}`,
         body,
         { withCredentials: true },
       )
-  
+
       // controller returns { message, comment }
       const created: ApiComment = res.data.comment
-  
+
       const normalized: CommentWithReplies = {
         _id: created._id,
         user: {
@@ -287,10 +277,10 @@ export default function EventDetailPage() {
         parent_comment_id: created.parent_comment_id ?? null,
         replies: [],
       }
-  
+
       setNewComment("")
       setReplyTo(null)
-  
+
       setComments((prev) => {
         if (normalized.parent_comment_id) {
           const parentId = normalized.parent_comment_id
@@ -308,7 +298,7 @@ export default function EventDetailPage() {
       console.error("Failed to add comment", err)
     }
   }
-  
+
   const handleToggleLike = async (commentId: string) => {
     if (!eventId) return
     try {
@@ -317,22 +307,22 @@ export default function EventDetailPage() {
         {},
         { withCredentials: true },
       )
-  
+
       const likeCount = res.data.likeCount as number
-  
+
       const updateNode = (list: CommentWithReplies[]): CommentWithReplies[] =>
         list.map((c) => ({
           ...c,
           likesCount: c._id === commentId ? likeCount : c.likesCount,
           replies: updateNode(c.replies),
         }))
-  
+
       setComments((prev) => updateNode(prev))
     } catch (err) {
       console.error("Failed to toggle like", err)
     }
   }
-  
+
 
   const handleDeleteComment = async (commentId: string) => {
     if (!eventId) return
@@ -396,7 +386,6 @@ export default function EventDetailPage() {
             <TabsList className="w-full justify-start">
               <TabsTrigger value="overview">Overview</TabsTrigger>
               <TabsTrigger value="discussion">Discussion</TabsTrigger>
-              <TabsTrigger value="participants">Participants</TabsTrigger>
             </TabsList>
 
             <TabsContent value="overview" className="space-y-6 mt-6">
@@ -508,43 +497,6 @@ export default function EventDetailPage() {
                     </p>
                   )}
                 </div>
-              </div>
-            </TabsContent>
-
-
-            <TabsContent value="participants" className="space-y-6 mt-6">
-              <div className="glass rounded-2xl p-6">
-                <div className="flex items-center justify-between mb-4">
-                  <h2 className="text-xl font-semibold">Participants</h2>
-                  <Badge variant="secondary">{mapped.attendees} registered</Badge>
-                </div>
-                <div className="space-y-3">
-                  {participants.map((participant, index) => (
-                    <div
-                      key={index}
-                      className="flex items-center gap-3 p-3 rounded-xl hover:bg-secondary/50 transition-colors"
-                    >
-                      <Avatar>
-                        <AvatarImage src={participant.avatar || "/placeholder.svg"} />
-                        <AvatarFallback>
-                          {participant.name
-                            .split(" ")
-                            .map((n) => n[0])
-                            .join("")}
-                        </AvatarFallback>
-                      </Avatar>
-                      <div>
-                        <p className="font-medium">{participant.name}</p>
-                        <p className="text-sm text-muted-foreground">
-                          {participant.department}
-                        </p>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-                <Button variant="outline" className="w-full mt-4 bg-transparent">
-                  View All Participants
-                </Button>
               </div>
             </TabsContent>
           </Tabs>
