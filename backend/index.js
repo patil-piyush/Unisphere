@@ -17,10 +17,13 @@ const eventCommentRoutes = require("./routes/eventCommentRoute");
 
 // admin related
 const adminRoutes = require("./routes/adminRoutes");
+const adminEventsRoutes = require("./routes/adminEventsRoutes");
 
 // Leaderboard related routes
 const gamificationRoutes = require("./routes/gamificationRoutes");
 
+// crons
+const {startRejectedEventCleanup} = require("./crons/rejectedEventCleanup");
 require("./crons/gamificationCron");
 
 //swaggere related
@@ -49,6 +52,7 @@ app.use("/api/event-comments", eventCommentRoutes);
 
 // admin related routes
 app.use("/api/admin", adminRoutes);
+app.use("/api/admin", adminEventsRoutes);
 
 //Attendance Routes 
 app.use("/api", attendanceRoutes);
@@ -61,6 +65,9 @@ app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerDocument));
 
 // Connect DB and start server
 connection().then(() => {
+  // Start cron jobs
+  startRejectedEventCleanup();
+  
   const PORT = process.env.PORT || 5000;
   app.listen(PORT, () => {
     console.log(`Server running on port ${PORT}`);

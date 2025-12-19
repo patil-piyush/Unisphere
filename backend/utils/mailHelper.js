@@ -50,8 +50,24 @@ const sendPromotionEmail = (user, event) => {
   });
 };
 
+const sendMail = async (to, subject, text) => {
+  try {
+    await transporter.sendMail({
+      from: `"UniSphere" <${process.env.MAIL_USER}>`,
+      to,
+      subject,
+      text
+    });
+
+    console.log(`📧 Mail sent to ${to}`);
+  } catch (error) {
+    console.error("❌ Mail sending failed:", error.message);
+  }
+};
+
 module.exports = {
   sendRegistrationEmail,
   sendWaitingEmail,
-  sendPromotionEmail
+  sendPromotionEmail,
+  sendMail
 };

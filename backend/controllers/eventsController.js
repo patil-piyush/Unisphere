@@ -3,7 +3,7 @@ const EventRegistration = require('../models/eventRegistration')
 const EventWaitlist = require('../models/eventWaitlist')
 const transporter = require('../config/mail')
 const cloudinary = require("../config/cloudinary");
-
+const EVENT_STATUS = require("../config/eventStatus");
 
 const Comment = require("../models/comments")
 
@@ -290,7 +290,9 @@ const openRegistration = async (req, res) => {
 // get all events 
 const getAllEvents = async (req, res) => {
   try {
-    const events = await Event.find()
+    const events = await Event.find({
+      status: EVENT_STATUS.APPROVED
+    })
       .populate("club_id", "name logoURL")
       .sort({ start_time: 1 });
 
