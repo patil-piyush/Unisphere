@@ -175,7 +175,7 @@ const getMonthlyLeaderboardRank = async (req, res) => {
       return res.status(200).json({
         month: monthNum + 1,
         year: yearNum,
-        rank: null,
+        rank: "Unranked",
         points: 0,
       });
     }
