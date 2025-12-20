@@ -1,4 +1,4 @@
-const MonthlyPoints = require("../models/MonthlyPoints");
+const MonthlyPoints = require("../models/monthlyPoints");
 const Badge = require("../models/Badge");
 const { getCurrentMonthYear } = require("../config/dateUtils");
 
