@@ -33,23 +33,19 @@ const swaggerDocument = require("./swagger/swagger.json");
 const app = express();
 
 
-// 🔥 CORS MUST COME FIRST
 app.use(cors({
-  origin: "https://unisphere-delta.vercel.app",
-  credentials: true,
-  methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-  allowedHeaders: ["Content-Type", "Authorization"]
+  origin: [
+    "https://unisphere-delta.vercel.app"
+  ],
+  credentials: true
 }));
 
-// 🔥 HANDLE PREFLIGHT EXPLICITLY
-app.options("*", cors());
+
 
 // Middleware
 app.use(express.json());
 app.use(cookieParser());
 app.use(express.urlencoded({ extended: true }));
-
-
 
 
 // Routes
@@ -75,19 +71,19 @@ app.use("/api/gamification", gamificationRoutes);
 //swagger setup
 app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerDocument));
 
-// // Connect DB and start server
-// connection().then(() => {
-//   // Start cron jobs
-//   startRejectedEventCleanup();
-  
-//   const PORT = process.env.PORT || 5000;
-//   app.listen(PORT, () => {
-//     console.log(`Server running on port ${PORT}`);
-//   });
-// });
 
-connection().then(() => {
-  startRejectedEventCleanup();
+app.get("/", (req, res) => {
+  res.json({ status: "Backend running" });
 });
 
-module.exports = app;
+
+// Connect DB and start server
+connection().then(() => {
+  // Start cron jobs
+  startRejectedEventCleanup();
+  
+  const PORT = process.env.PORT || 5000;
+  app.listen(PORT, () => {
+    console.log(`Server running on port ${PORT}`);
+  });
+});
