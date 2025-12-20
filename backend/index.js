@@ -75,13 +75,19 @@ app.use("/api/gamification", gamificationRoutes);
 //swagger setup
 app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerDocument));
 
-// Connect DB and start server
-connection().then(() => {
-  // Start cron jobs
-  startRejectedEventCleanup();
+// // Connect DB and start server
+// connection().then(() => {
+//   // Start cron jobs
+//   startRejectedEventCleanup();
   
-  const PORT = process.env.PORT || 5000;
-  app.listen(PORT, () => {
-    console.log(`Server running on port ${PORT}`);
-  });
+//   const PORT = process.env.PORT || 5000;
+//   app.listen(PORT, () => {
+//     console.log(`Server running on port ${PORT}`);
+//   });
+// });
+
+connection().then(() => {
+  startRejectedEventCleanup();
 });
+
+module.exports = app;
