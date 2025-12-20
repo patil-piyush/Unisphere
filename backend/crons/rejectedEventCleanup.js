@@ -1,5 +1,5 @@
 const cron = require("node-cron");
-const Event = require("../models/event");
+const Event = require("../models/Event");
 const EVENT_STATUS = require("../config/eventStatus");
 const { REJECTED_EVENT_DELETE_AFTER_DAYS } = require("../config/eventCleanupConfig");
 const { addDays } = require("../utils/dateUtils");

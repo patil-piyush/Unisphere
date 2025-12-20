@@ -1,5 +1,5 @@
-const Club = require('../models/club');
-const ClubMember = require('../models/clubMember'); // You forgot to import this
+const Club = require('../models/Club');
+const ClubMember = require('../models/ClubMember'); // You forgot to import this
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const cloudinary = require('../config/cloudinary');

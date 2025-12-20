@@ -1,7 +1,6 @@
-const Attendance = require("../models/attendance");
-const AttendanceToken = require("../models/attendanceToken");
-const EventRegistration = require("../models/eventRegistration");
-
+const Attendance = require("../models/Attendance");
+const AttendanceToken = require("../models/AttendanceToken");
+const EventRegistration = require("../models/EventRegistration");
 const MonthlyPoints = require("../models/MonthlyPoints");
 const { EVENT_ATTENDANCE_POINTS } = require("../config/pointsConfig");
 const { getCurrentMonthYear } = require("../config/dateUtils");
@@ -15,7 +14,7 @@ const scanAttendance = async (req, res) => {
     const userId = req.userId;
     const { token } = req.body;
 
-    // 1️⃣ Validate token
+    // Validate token
     const tokenDoc = await AttendanceToken.findOne({ token });
     if (!tokenDoc)
       return res.status(400).json({ message: "Invalid QR code" });
@@ -25,7 +24,7 @@ const scanAttendance = async (req, res) => {
 
     const eventId = tokenDoc.event_id;
 
-    // 2️⃣ Ensure user is registered
+    // Ensure user is registered
     const registration = await EventRegistration.findOne({
       event_id: eventId,
       user_id: userId
@@ -34,7 +33,7 @@ const scanAttendance = async (req, res) => {
     if (!registration)
       return res.status(403).json({ message: "Not registered for this event" });
 
-    // 3️⃣ Prevent duplicate attendance
+    // Prevent duplicate attendance
     const existing = await Attendance.findOne({
       event_id: eventId,
       user_id: userId
@@ -43,14 +42,14 @@ const scanAttendance = async (req, res) => {
     if (existing)
       return res.status(409).json({ message: "Attendance already marked" });
 
-    // 4️⃣ Mark attendance
+    // Mark attendance
     await Attendance.create({
       event_id: eventId,
       user_id: userId,
       check_in_time: new Date()
     });
 
-    // 5️⃣ Add monthly points
+    // Add monthly points
     const { month, year } = getCurrentMonthYear();
 
     const monthlyPoints = await MonthlyPoints.findOneAndUpdate(

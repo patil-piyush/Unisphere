@@ -32,14 +32,21 @@ const swaggerDocument = require("./swagger/swagger.json");
 
 const app = express();
 
+
+app.use(cors({
+  origin: [
+    "https://unisphere-delta.vercel.app"
+  ],
+  credentials: true
+}));
+
+
+
 // Middleware
 app.use(express.json());
 app.use(cookieParser());
 app.use(express.urlencoded({ extended: true }));
-app.use(cors({
-  origin: "http://localhost:3000", // your frontend
-  credentials: true
-}));
+
 
 // Routes
 app.use("/api/clubs", clubRoutes);
@@ -63,6 +70,12 @@ app.use("/api/gamification", gamificationRoutes);
 
 //swagger setup
 app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerDocument));
+
+
+app.get("/", (req, res) => {
+  res.json({ status: "Backend running" });
+});
+
 
 // Connect DB and start server
 connection().then(() => {

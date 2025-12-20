@@ -1,7 +1,7 @@
 const MonthlyPoints = require("../models/MonthlyPoints");
-const User = require("../models/user");
+const User = require("../models/User");
 const { getCurrentMonthYear } = require("../config/dateUtils");
-const Attendance = require("../models/attendance");
+const Attendance = require("../models/Attendance");
 
 /**
  * 1️⃣ Monthly Leaderboard

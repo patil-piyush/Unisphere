@@ -1,6 +1,6 @@
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
-const Club = require('../models/club');
+const Club = require('../models/Club');
 require("dotenv").config();
 
 const adminLogin = async (req, res) => {
