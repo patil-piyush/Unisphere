@@ -1,4 +1,4 @@
-const Comment = require("../models/Comments");
+const Comment = require("../models/Comment");
 const EventRegistration = require("../models/EventRegistration");
 
 // Only registered users can comment

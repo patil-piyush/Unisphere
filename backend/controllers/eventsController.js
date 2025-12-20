@@ -5,7 +5,7 @@ const transporter = require('../config/mail')
 const cloudinary = require("../config/cloudinary");
 const EVENT_STATUS = require("../config/eventStatus");
 
-const Comment = require("../models/Comments")
+const Comment = require("../models/Comment")
 
 
 // create a new event president only
