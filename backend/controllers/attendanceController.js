@@ -1,7 +1,6 @@
-const Attendance = require("../models/attendance");
-const AttendanceToken = require("../models/attendanceToken");
-const EventRegistration = require("../models/eventRegistration");
-
+const Attendance = require("../models/Attendance");
+const AttendanceToken = require("../models/AttendanceToken");
+const EventRegistration = require("../models/EventRegistration");
 const MonthlyPoints = require("../models/MonthlyPoints");
 const { EVENT_ATTENDANCE_POINTS } = require("../config/pointsConfig");
 const { getCurrentMonthYear } = require("../config/dateUtils");

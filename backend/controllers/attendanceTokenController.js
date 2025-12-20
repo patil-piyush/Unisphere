@@ -1,4 +1,4 @@
-const AttendanceToken = require("../models/attendanceToken");
+const AttendanceToken = require("../models/AttendanceToken");
 const crypto = require("crypto");
 
 const startAttendanceSession = async (req, res) => {

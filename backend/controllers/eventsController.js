@@ -1,11 +1,11 @@
-const Event = require('../models/event')
-const EventRegistration = require('../models/eventRegistration')
-const EventWaitlist = require('../models/eventWaitlist')
+const Event = require('../models/Event')
+const EventRegistration = require('../models/EventRegistration')
+const EventWaitlist = require('../models/EventWaitlist')
 const transporter = require('../config/mail')
 const cloudinary = require("../config/cloudinary");
 const EVENT_STATUS = require("../config/eventStatus");
 
-const Comment = require("../models/comments")
+const Comment = require("../models/Comments")
 
 
 // create a new event president only

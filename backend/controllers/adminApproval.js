@@ -1,5 +1,5 @@
-const Event = require("../models/event");
-const Club = require("../models/club");
+const Event = require("../models/Event");
+const Club = require("../models/Club");
 
 const { eventRejectedTemplate } = require("../utils/mailTemplate");
 const { sendMail } = require("../utils/mailHelper");
