@@ -1,6 +1,6 @@
 const MonthlyPoints = require("../models/monthlyPoints");
-const Badge = require("../models/Badge");
-const { getCurrentMonthYear } = require("../config/dateUtils");
+const Badge = require("../models/badge");
+const { getCurrentMonthYear } = require("../utils/dateUtils");
 
 /**
  * Get badges earned by logged-in user for a given month
