@@ -32,16 +32,23 @@ const swaggerDocument = require("./swagger/swagger.json");
 
 const app = express();
 
+
+// 🔥 CORS MUST COME FIRST
+app.use(cors({
+  origin: "https://unisphere-delta.vercel.app",
+  credentials: true,
+  methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+  allowedHeaders: ["Content-Type", "Authorization"]
+}));
+
+// 🔥 HANDLE PREFLIGHT EXPLICITLY
+app.options("*", cors());
+
 // Middleware
 app.use(express.json());
 app.use(cookieParser());
 app.use(express.urlencoded({ extended: true }));
-app.use(cors({
-  origin: [
-    "https://unisphere-delta.vercel.app"
-  ],
-  credentials: true
-}));
+
 
 
 
