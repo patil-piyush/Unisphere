@@ -9,6 +9,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { ThemeToggle } from "@/components/theme-toggle"
 import { cn } from "@/lib/utils"
+const BackendURL = process.env.NEXT_PUBLIC_BACKEND_API_URL || "http//:localhost:5000";
 
 export function ClubAdminLoginForm() {
   const router = useRouter()
@@ -39,7 +40,7 @@ export function ClubAdminLoginForm() {
   
     setIsLoading(true);
     try {
-      const response = await fetch('http://localhost:5000/api/clubs/login', {
+      const response = await fetch(`${BackendURL}/api/clubs/login`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, password }),
