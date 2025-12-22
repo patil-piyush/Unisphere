@@ -1,24 +1,26 @@
 import { NextRequest, NextResponse } from "next/server"
 
-const PUBLIC_PATHS = ["/", "/login", "/register", "/auth/login", "/auth/register", "/admin-login", "/club-admin-login"]
+const PUBLIC_PATHS = [
+  "/",
+  "/login",
+  "/register",
+  "/auth/login",
+  "/auth/register",
+  "/admin-login",
+  "/club-admin-login",
+]
+
 const AUTH_COOKIE_NAME = "token"
 
 export function middleware(req: NextRequest) {
   const { pathname } = req.nextUrl
 
-  // Allow public routes
+  // 1) Allow all public routes (logins, landing, etc.)
   if (PUBLIC_PATHS.some((p) => pathname === p || pathname.startsWith(`${p}/`))) {
     return NextResponse.next()
   }
 
-  // Check only protected prefixes
-  const isProtected =
-    pathname.startsWith("/dashboard") ||
-    pathname.startsWith("/admin") ||
-    pathname.startsWith("/club-admin")
-
-  if (!isProtected) return NextResponse.next()
-
+  // 2) For everything else, require auth
   const token = req.cookies.get(AUTH_COOKIE_NAME)?.value
 
   if (!token) {
@@ -30,6 +32,7 @@ export function middleware(req: NextRequest) {
   return NextResponse.next()
 }
 
+// Apply middleware to all app routes
 export const config = {
-  matcher: ["/dashboard/:path*", "/admin/:path*", "/club-admin/:path*"],
+  matcher: ["/:path*"],
 }
