@@ -16,11 +16,15 @@ const scanAttendance = async (req, res) => {
 
     // Validate token
     const tokenDoc = await AttendanceToken.findOne({ token });
+
     if (!tokenDoc)
       return res.status(400).json({ message: "Invalid QR code" });
 
     if (tokenDoc.expiration < new Date())
       return res.status(400).json({ message: "QR expired" });
+
+    if (!tokenDoc.is_active)
+      return res.status(400).json({ message: "Attendance session ended" });
 
     const eventId = tokenDoc.event_id;
 
