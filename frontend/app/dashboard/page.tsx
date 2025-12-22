@@ -8,6 +8,8 @@ import Link from "next/link"
 import { useEffect, useState } from "react"
 import Image from "next/image"
 import axios from "axios"
+import { ScanLine } from "lucide-react" 
+
 
 const BackendURL = process.env.NEXT_PUBLIC_BACKEND_API_URL || "http://localhost:5000"
 
@@ -181,13 +183,37 @@ export default function DashboardPage() {
             Here&apos;s what&apos;s happening on campus today.
           </p>
         </div>
+
+        <div className="flex gap-3">
+          <Link href="/dashboard/attendance">
+            <Button variant="outline" className="group">
+              Scan QR to Mark Attendance
+              <ScanLine className="ml-2 h-4 w-4" />
+            </Button>
+          </Link>
+
+          <Link href="/dashboard/events">
+            <Button className="group">
+              Explore Events
+              <ArrowRight className="ml-2 h-4 w-4 transition-transform group-hover:translate-x-1" />
+            </Button>
+          </Link>
+        </div>
+      </div>
+      {/* <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+        <div>
+          <h1 className="text-3xl font-bold">Welcome back, {username}</h1>
+          <p className="text-muted-foreground">
+            Here&apos;s what&apos;s happening on campus today.
+          </p>
+        </div>
         <Link href="/dashboard/events">
           <Button className="group">
             Explore Events
             <ArrowRight className="ml-2 h-4 w-4 transition-transform group-hover:translate-x-1" />
           </Button>
         </Link>
-      </div>
+      </div> */}
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         {stats.map((stat, index) => (
@@ -204,17 +230,20 @@ export default function DashboardPage() {
             </Link>
           </div>
           <div className="grid md:grid-cols-2 gap-4">
-            {recommendedEventsList.slice(0, 2).map((event) => (
-              <Link href="/dashboard/events" >
-                <EventCard
-                  key={event._id || event.id || "unknown"}
-                  {...{
-                    ...event,
-                    _id: event._id || event.id || "unknown",
-                  }}
-                />
-              </Link>
-            ))}
+            {recommendedEventsList.slice(0, 2).map((event) => {
+              const key = event._id || event.id || "unknown"
+              return (
+                <Link href="/dashboard/events" key={key}>
+                  <EventCard
+                    {...{
+                      ...event,
+                      _id: key,
+                      id: key,
+                    }}
+                  />
+                </Link>
+              )
+            })}
           </div>
         </div>
 
