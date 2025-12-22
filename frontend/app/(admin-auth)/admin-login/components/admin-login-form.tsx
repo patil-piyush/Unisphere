@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { ThemeToggle } from "@/components/theme-toggle"
 import { cn } from "@/lib/utils"
+const BackendURL = process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:5000";
 
 export function AdminLoginForm() {
   const router = useRouter()
@@ -39,7 +40,7 @@ export function AdminLoginForm() {
     setIsLoading(true)
     try {
       // change the URL to match admin login endpoint
-      const response = await fetch('http://localhost:5000/api/admin/login', {
+      const response = await fetch(`${BackendURL}/api/admin/login`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, password }),
