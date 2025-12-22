@@ -200,21 +200,6 @@ export default function DashboardPage() {
           </Link>
         </div>
       </div>
-      {/* <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-        <div>
-          <h1 className="text-3xl font-bold">Welcome back, {username}</h1>
-          <p className="text-muted-foreground">
-            Here&apos;s what&apos;s happening on campus today.
-          </p>
-        </div>
-        <Link href="/dashboard/events">
-          <Button className="group">
-            Explore Events
-            <ArrowRight className="ml-2 h-4 w-4 transition-transform group-hover:translate-x-1" />
-          </Button>
-        </Link>
-      </div> */}
-
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         {stats.map((stat, index) => (
           <StatsCard key={index} {...stat} />

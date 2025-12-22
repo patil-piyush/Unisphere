@@ -225,11 +225,19 @@ const searchUsers = async (req, res) => {
   }
 }
 
-//logout user
+// logout user
 const logoutUser = async (req, res) => {
-  res.clearCookie('token');
-  res.status(200).json({ message: 'Logged out successfully' });
+  res.clearCookie("token", {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === 'production',      // must match login
+    sameSite: "none",
+    path: "/",          // must match login
+  })
+  return res.status(200).json({ message: "Logged out successfully" })
 }
+      
+
+
 
 module.exports = {
   registerUser,
