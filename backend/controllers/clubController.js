@@ -63,7 +63,7 @@ const loginClub = async (req, res) => {
     const isValid = await bcrypt.compare(password, club.password);
     if (!isValid) return res.status(401).json({ message: "Invalid credentials" });
 
-    const token = jwt.sign(
+    const clubToken = jwt.sign(
       {
         id: club._id,
         role: "president",
@@ -74,7 +74,7 @@ const loginClub = async (req, res) => {
     );
 
     // ===== COOKIE SET HERE =====
-    res.cookie("token", token, {
+    res.cookie("token", clubToken, {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
       sameSite: "none", // Adjust based on your frontend domain x sameSite = "Strict",

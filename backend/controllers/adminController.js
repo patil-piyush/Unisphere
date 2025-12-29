@@ -36,7 +36,7 @@ const adminLogin = async (req, res) => {
       }
 
     // 4️⃣ Create admin token (VERY IMPORTANT)
-    const token = jwt.sign(
+    const adminToken = jwt.sign(
       {
         //id: user._id,
         role: "admin",
@@ -47,7 +47,7 @@ const adminLogin = async (req, res) => {
     );
 
     // 5️⃣ Set cookie
-    res.cookie("token", token, {
+    res.cookie("token", adminToken, {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
       sameSite: "none", // Adjusted for cross-site requests x sameSite: "Strict"
