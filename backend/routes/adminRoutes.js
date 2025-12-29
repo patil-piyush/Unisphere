@@ -4,6 +4,8 @@ const router = express.Router();
 const {adminAuthMiddleware} = require('../middlewares/adminAuthMiddleware');
 const {adminLogin, changeClubPassword} = require('../controllers/adminController');
 
+const {generateReportPDF} = require('../controllers/reportsController');
+
 const {
     createClub,
     updateClub,
@@ -56,5 +58,8 @@ router.get('/users/search', adminAuthMiddleware, searchUsers);
 router.get('/events', adminAuthMiddleware, getAllEvents);
 router.get('/events/club/:clubId', adminAuthMiddleware, getClubEvents);
 router.get('/events/current-month/count', adminAuthMiddleware, getCurrentMonthEventCount);
+
+// Reports
+router.get('/reports/generate', adminAuthMiddleware, generateReportPDF);
 
 module.exports = router;
