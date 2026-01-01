@@ -71,7 +71,7 @@ app.use("/api", attendanceRoutes);
 app.use("/api/gamification", gamificationRoutes);
 
 //payment routes
-app.use("/api", paymentRoutes);
+// app.use("/api", paymentRoutes);
 
 //swagger setup
 app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerDocument));

@@ -9,14 +9,14 @@ const {
   getPendingEvents
 } = require("../controllers/adminApproval");
 
-// ✅ Approve event
+// Approve event
 router.put(
   "/events/:eventId/approve",
   adminAuthMiddleware,
   approveEvent
 );
 
-// ❌ Reject event (with reason)
+// Reject event (with reason)
 router.put(
   "/events/:eventId/reject",
   adminAuthMiddleware,

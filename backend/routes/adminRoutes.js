@@ -60,6 +60,6 @@ router.get('/events/club/:clubId', adminAuthMiddleware, getClubEvents);
 router.get('/events/current-month/count', adminAuthMiddleware, getCurrentMonthEventCount);
 
 // Reports
-router.get('/reports/generate', adminAuthMiddleware, generateReportPDF);
+router.post('/reports/generate', adminAuthMiddleware, generateReportPDF);
 
 module.exports = router;

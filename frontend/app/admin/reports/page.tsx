@@ -1,8 +1,12 @@
 "use client"
 
-import { FileText, Download, TrendingUp } from "lucide-react"
+import { FileText, Download } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
+import { useState } from "react"
+import axios from "axios"
+
+const BackendURL = process.env.NEXT_PUBLIC_BACKEND_API_URL || "http://localhost:5000"
 
 const reports = [
   {
@@ -31,7 +35,72 @@ const reports = [
   },
 ]
 
+type ReportType = "monthly" | "quarterly" | "yearly"
+
 export default function ReportsPage() {
+  const [type, setType] = useState<ReportType>("monthly")
+  const [month, setMonth] = useState<number | "">("")
+  const [quarter, setQuarter] = useState<number | "">("")
+  const [year, setYear] = useState<number>(2025)
+  const [loading, setLoading] = useState(false)
+
+
+  const handleGenerate = async () => {
+    try {
+      setLoading(true)
+
+      const body: any = {
+        type,
+        month: "",
+        quarter: "",
+        year: String(year),
+      }
+
+      if (type === "monthly") {
+        if (month === "") {
+          alert("Please select a month")
+          return
+        }
+        body.month = month
+      }
+
+      if (type === "quarterly") {
+        if (quarter === "") {
+          alert("Please select a quarter")
+          return
+        }
+        body.quarter = quarter
+      }
+
+      const res = await axios.post(
+        `${BackendURL}/api/admin/reports/generate`,
+        body,
+        {
+          withCredentials: true,
+          responseType: "blob", // important to get PDF
+          headers: {
+            "Content-Type": "application/json",
+          },
+        },
+      )
+
+      const blob = new Blob([res.data], { type: "application/pdf" })
+      const url = window.URL.createObjectURL(blob)
+      const a = document.createElement("a")
+      a.href = url
+      a.download = `institute-report-${type}-${year}.pdf`
+      document.body.appendChild(a)
+      a.click()
+      a.remove()
+      window.URL.revokeObjectURL(url)
+    } catch (err) {
+      console.error("Error generating report:", err)
+      alert("Error generating report")
+    } finally {
+      setLoading(false)
+    }
+  }
+
   return (
     <div className="space-y-8">
       {/* Header */}
@@ -44,36 +113,101 @@ export default function ReportsPage() {
       <div className="glass bg-card/70 rounded-xl p-6 border border-border/50">
         <h2 className="text-xl font-bold mb-4">Generate New Report</h2>
         <div className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <select className="px-4 py-2 rounded-lg border border-border/50 bg-background">
-              <option>Monthly</option>
-              <option>Quarterly</option>
-              <option>Annual</option>
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+            {/* Type */}
+            <select
+              className="px-4 py-2 rounded-lg border border-border/50 bg-background"
+              value={type}
+              onChange={(e) => {
+                const t = e.target.value as ReportType
+                setType(t)
+              }}
+            >
+              <option value="monthly">Monthly</option>
+              <option value="quarterly">Quarterly</option>
+              <option value="yearly">Annual</option>
             </select>
-            <select className="px-4 py-2 rounded-lg border border-border/50 bg-background">
-              <option>Activity Report</option>
-              <option>Budget Report</option>
-              <option>Attendance Report</option>
-            </select>
-            <Button className="bg-primary hover:bg-primary/90">
+
+            {/* Month (only for monthly) */}
+            {type === "monthly" && (
+              <select
+                className="px-4 py-2 rounded-lg border border-border/50 bg-background"
+                value={month}
+                onChange={(e) =>
+                  setMonth(e.target.value === "" ? "" : Number(e.target.value))
+                }
+              >
+                <option value="">Select month</option>
+                <option value={0}>January</option>
+                <option value={1}>February</option>
+                <option value={2}>March</option>
+                <option value={3}>April</option>
+                <option value={4}>May</option>
+                <option value={5}>June</option>
+                <option value={6}>July</option>
+                <option value={7}>August</option>
+                <option value={8}>September</option>
+                <option value={9}>October</option>
+                <option value={10}>November</option>
+                <option value={11}>December</option>
+              </select>
+            )}
+
+            {/* Quarter (only for quarterly) */}
+            {type === "quarterly" && (
+              <select
+                className="px-4 py-2 rounded-lg border border-border/50 bg-background"
+                value={quarter}
+                onChange={(e) =>
+                  setQuarter(e.target.value === "" ? "" : Number(e.target.value))
+                }
+              >
+                <option value="">Select quarter</option>
+                <option value={1}>Q1 (Jan–Mar)</option>
+                <option value={2}>Q2 (Apr–Jun)</option>
+                <option value={3}>Q3 (Jul–Sep)</option>
+                <option value={4}>Q4 (Oct–Dec)</option>
+              </select>
+            )}
+
+            {/* Year */}
+            <input
+              type="number"
+              className="px-4 py-2 rounded-lg border border-border/50 bg-background"
+              value={year}
+              onChange={(e) => setYear(Number(e.target.value))}
+              placeholder="Year"
+            />
+
+            {/* Generate button */}
+            <Button
+              className="bg-primary hover:bg-primary/90 md:col-span-1"
+              onClick={handleGenerate}
+              disabled={loading}
+            >
               <FileText className="mr-2 h-4 w-4" />
-              Generate
+              {loading ? "Generating..." : "Generate"}
             </Button>
           </div>
         </div>
       </div>
 
-      {/* Available Reports */}
+      {/* Available Reports (unchanged) */}
       <div className="glass bg-card/70 rounded-xl p-6 border border-border/50">
         <h2 className="text-xl font-bold mb-6">Available Reports</h2>
         <div className="space-y-3">
           {reports.map((report) => (
-            <div key={report.id} className="flex items-center justify-between p-4 rounded-lg border border-border/30 hover:border-border/50 transition-colors">
+            <div
+              key={report.id}
+              className="flex items-center justify-between p-4 rounded-lg border border-border/30 hover:border-border/50 transition-colors"
+            >
               <div className="flex items-center gap-4">
                 <FileText className="w-8 h-8 text-primary" />
                 <div>
                   <h3 className="font-semibold">{report.name}</h3>
-                  <p className="text-sm text-muted-foreground">{report.date} • {report.size}</p>
+                  <p className="text-sm text-muted-foreground">
+                    {report.date} • {report.size}
+                  </p>
                 </div>
               </div>
               <div className="flex items-center gap-3">
