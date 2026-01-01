@@ -1,6 +1,7 @@
 const Event = require("../models/Event");
 const EventRegistration = require("../models/EventRegistration");
 const EventWaitlist = require("../models/EventWaitlist");
+const Payment = require("../models/Payment");
 const User = require("../models/User");
 const {
   sendRegistrationEmail,
@@ -8,11 +9,13 @@ const {
   sendPromotionEmail
 } = require("../utils/mailHelper");
 
-// User registers for event (with waiting list)
 const registerForEvent = async (req, res) => {
   try {
     const user_id = req.userId;
-    const event_id = req.params.eventId;  // <-- FIXED
+    const event_id = req.params.eventId;
+
+    const user = await User.findById(user_id);
+    if (!user) return res.status(404).json({ message: "User not found" });
 
     const event = await Event.findById(event_id).populate("club_id", "name email");
     if (!event) return res.status(404).json({ message: "Event not found" });
@@ -20,37 +23,42 @@ const registerForEvent = async (req, res) => {
     if (event.isClosed)
       return res.status(400).json({ message: "Registrations are closed" });
 
-    if (new Date(event.deadline) < new Date())
-      return res.status(400).json({ message: "Registration deadline passed" });
-
-    const user = await User.findById(user_id);
-    if (!user) return res.status(404).json({ message: "User not found" });
-
     // Check existing registration
     const alreadyRegistered = await EventRegistration.findOne({ event_id, user_id });
     if (alreadyRegistered)
       return res.status(409).json({ message: "Already registered" });
 
-    // Check waitlist
-    const alreadyQueued = await EventWaitlist.findOne({ event_id, user_id });
-    if (alreadyQueued)
-      return res.status(409).json({ message: "Already on waiting list" });
+    // Try atomic seat increment
+    const updatedEvent = await Event.findOneAndUpdate(
+      { _id: event_id, isClosed: false, registeredCount: { $lt: event.max_capacity } },
+      { $inc: { registeredCount: 1 } },
+      { new: true }
+    );
 
-    // If seats are available
-    if (event.registeredCount < event.max_capacity) {
+    // If seat was locked successfully
+    if (updatedEvent) {
       await EventRegistration.create({ event_id, user_id });
-      event.registeredCount += 1;
-      await event.save();
 
-      sendRegistrationEmail(user, event);
+      const isFree = user.email.endsWith("@pccoepune.org");
+
+      await Payment.create({
+        event_id,
+        user_id,
+        amount: isFree ? 0 : updatedEvent.price,
+        status: "success",
+        transaction_id: isFree ? "FREE_REG" : null
+      });
+
+      sendRegistrationEmail(user, updatedEvent);
+
       return res.status(200).json({
         status: "registered",
-        message: "Registration successful"
+        message: isFree ? "Free registration successful" : "Registration successful, payment recorded"
       });
     }
 
-    // Otherwise add to waitlist
-    await EventWaitlist.create({ event_id, user_id });
+    // If full → go to waitlist (no seat increment)
+    const waitlisted = await EventWaitlist.create({ event_id, user_id });
     sendWaitingEmail(user, event);
 
     return res.status(200).json({
@@ -66,11 +74,10 @@ const registerForEvent = async (req, res) => {
   }
 };
 
-// Cancel registration (user) + promote from waitlist
 const cancelRegistration = async (req, res) => {
   try {
     const user_id = req.userId;
-    const event_id = req.params.eventId;  // <-- FIXED
+    const event_id = req.params.eventId;
 
     const event = await Event.findById(event_id).populate("club_id", "name email");
     if (!event) return res.status(404).json({ message: "Event not found" });
@@ -79,38 +86,49 @@ const cancelRegistration = async (req, res) => {
     if (!registration)
       return res.status(404).json({ message: "You are not registered for this event" });
 
+    // Delete registration
     await EventRegistration.deleteOne({ _id: registration._id });
 
-    event.registeredCount = Math.max(0, event.registeredCount - 1);
-    await event.save();
+    // Atomic seat decrement
+    await Event.updateOne({ _id: event_id }, { $inc: { registeredCount: -1 } });
 
-    // Promote from waitlist if available
+    // Update payment status
+    await Payment.updateOne({ event_id, user_id }, { status: "released" });
+
+    // Promote from waitlist atomically
     const nextInQueue = await EventWaitlist.findOne({ event_id }).sort({ createdAt: 1 });
 
     if (nextInQueue) {
       const promotedUser = await User.findById(nextInQueue.user_id);
+      const promotedEvent = await Event.findOneAndUpdate(
+        { _id: event_id, registeredCount: { $lt: event.max_capacity } },
+        { $inc: { registeredCount: 1 } },
+        { new: true }
+      );
 
-      await EventRegistration.create({
-        event_id,
-        user_id: nextInQueue.user_id
-      });
+      if (promotedEvent) {
+        await EventRegistration.create({ event_id, user_id: nextInQueue.user_id });
 
-      event.registeredCount += 1;
-      await event.save();
+        await Payment.create({
+          event_id,
+          user_id: nextInQueue.user_id,
+          amount: 0,
+          status: "success",
+          transaction_id: "PROMOTED_FREE"
+        });
 
-      await EventWaitlist.deleteOne({ _id: nextInQueue._id });
-
-      sendPromotionEmail(promotedUser, event);
+        await EventWaitlist.deleteOne({ _id: nextInQueue._id });
+        sendPromotionEmail(promotedUser, promotedEvent);
+      }
     }
 
-    res.status(200).json({ message: "Registration cancelled" });
+    return res.status(200).json({ message: "Registration cancelled" });
 
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
 };
 
-// Get events current user is registered for
 const getMyRegisteredEvents = async (req, res) => {
   try {
     const registrations = await EventRegistration.find({ user_id: req.userId })

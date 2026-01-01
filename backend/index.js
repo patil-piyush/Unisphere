@@ -9,6 +9,7 @@ const clubRoutes = require("./routes/clubRoutes");
 const clubMemberRoutes = require("./routes/clubMemberRoutes");
 const userRoutes = require("./routes/userRoutes");
 const attendanceRoutes = require("./routes/attendanceRoutes");
+const paymentRoutes = require("./routes/paymentRoutes");
 
 //events related routes can be added similarly
 const eventRoutes = require("./routes/eventsRoutes");
@@ -68,6 +69,9 @@ app.use("/api", attendanceRoutes);
 
 // Leaderboard Routes
 app.use("/api/gamification", gamificationRoutes);
+
+//payment routes
+app.use("/api", paymentRoutes);
 
 //swagger setup
 app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerDocument));
