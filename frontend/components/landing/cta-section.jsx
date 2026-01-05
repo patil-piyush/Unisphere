@@ -9,7 +9,7 @@ export function CTASection() {
     <section className="py-24">
       <div className="container mx-auto px-4">
         <div className="relative rounded-3xl overflow-hidden">
-          <div className="absolute inset-0 bg-gradient-to-br from-primary via-primary/90 to-primary/80" />
+          <div className="absolute inset-0 bg-linear-to-br from-primary via-primary/90 to-primary/80" />
           <div className="absolute inset-0 bg-[url('/abstract-geometric-pattern.png')] opacity-10 mix-blend-overlay" />
 
           <div className="relative z-10 py-16 px-6 md:py-24 md:px-12 text-center">
@@ -26,7 +26,7 @@ export function CTASection() {
                   <ArrowRight className="ml-2 h-5 w-5 transition-transform group-hover:translate-x-1" />
                 </Button>
               </Link>
-              <Link href="/events">
+              <Link href="/register">
                 <Button
                   size="lg"
                   variant="outline"
