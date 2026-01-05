@@ -1,3 +1,152 @@
+// app/dashboard/page.tsx
+
+import { cookies } from "next/headers"
+import { redirect } from "next/navigation"
+import axios from "axios"
+import { DashboardClient } from "./dashboard-client"
+
+const BackendURL =
+  process.env.NEXT_PUBLIC_BACKEND_API_URL || "http://localhost:5000"
+
+type Event = {
+  _id?: string
+  id?: string
+  title: string
+  description: string
+  clubName: string
+  bannerURL?: string
+  category: "Workshop" | "Seminar" | "Social" | "Competition" | "Other"
+  venue: string
+  start_time: string
+  start_date: string | Date
+  end_time: string
+  end_date: string | Date
+  max_capacity: number
+  registeredCount: number
+  isClosed?: boolean
+  price?: number
+  isRegistered?: boolean
+  isAdmin?: boolean
+}
+
+type Stat = {
+  title: string
+  value: string | number
+  change: string
+  changeType: "positive" | "neutral" | "negative"
+  icon: "calendar" | "star" | "award" | "trophy"
+}
+
+export default async function DashboardPage() {
+  const cookieStore = await cookies()
+  const token = cookieStore.get("token")
+  if (!token) {
+    redirect("/login")
+  }
+
+  try {
+    const axiosInstance = axios.create({
+      baseURL: BackendURL,
+      withCredentials: true,
+      headers: {
+        Cookie: cookieStore
+          .getAll()
+          .map((c) => `${c.name}=${encodeURIComponent(c.value)}`)
+          .join("; "),
+      },
+    })
+
+    const [profileRes, regsRes, pointsRes, rankRes, eventsRes] =
+      await Promise.all([
+        axiosInstance.get("/api/users/me"),
+        axiosInstance.get("/api/event-registrations/my"),
+        axiosInstance.get("/api/gamification/points/monthly"),
+        axiosInstance.get("/api/gamification/leaderboard/rank"),
+        axiosInstance.get("/api/events"),
+      ])
+
+    const username: string = profileRes.data.name ?? ""
+    const eventAttended: number = Array.isArray(regsRes.data)
+      ? regsRes.data.length
+      : 0
+    const points: number = pointsRes.data.points ?? 0
+    const badgesCount: number = (pointsRes.data.badges ?? []).length
+    const rank: string = rankRes.data.rank?.toString() ?? "Unranked"
+
+    const regsData = Array.isArray(regsRes.data) ? regsRes.data : []
+    const registeredEventIds = new Set<string>(
+      regsData
+        .map((r: any) => r?.event_id?._id)
+        .filter((id: any) => typeof id === "string"),
+    )
+
+    const events: Event[] = (eventsRes.data as Event[]).map((e) => {
+      const eid = (typeof e._id === "string" ? e._id : "") || e.id || ""
+      return {
+        ...e,
+        _id: eid,
+        id: eid,
+        isRegistered: registeredEventIds.has(eid),
+      }
+    })
+
+    const recommendedEventsList = events
+    const upcomingEventsList = events
+
+    const stats: Stat[] = [
+      {
+        title: "Events Attended",
+        value: eventAttended,
+        change: "+3 this month --- remaining",
+        changeType: "positive",
+        icon: "calendar",
+      },
+      {
+        title: "Total Points",
+        value: points.toString(),
+        change: points >= 100 ? "Great job!" : "Keep going!",
+        changeType: "positive",
+        icon: "star",
+      },
+      {
+        title: "Badges Earned",
+        value: badgesCount,
+        change: "",
+        changeType: "neutral",
+        icon: "award",
+      },
+      {
+        title: "Leaderboard Rank",
+        value: rank,
+        change:
+          rank === "Unranked" || !rank
+            ? "Participate more to get ranked!"
+            : "Go higher!",
+        changeType:
+          rank === "Unranked" || !rank ? "negative" : "positive",
+        icon: "trophy",
+      },
+    ]
+
+    return (
+      <DashboardClient
+        username={username}
+        stats={stats}
+        recommendedEventsList={recommendedEventsList}
+        upcomingEventsList={upcomingEventsList}
+      />
+    )
+  } catch (error) {
+    redirect("/login")
+  }
+}
+
+
+
+
+
+
+/*
 "use client"
 
 import { Calendar, Trophy, Award, Star, ArrowRight, LucideIcon } from "lucide-react"
@@ -291,16 +440,22 @@ export default function DashboardPage() {
                   View Leaderboard
                 </Button>
               </Link>
-              {/* <Link href="/dashboard/my-events">
+
+              { <Link href="/dashboard/my-events">
                 <Button variant="outline" className="w-full justify-start bg-transparent">
                   <Award className="mr-2 h-4 w-4" />
                   My Certificates
                 </Button>
-              </Link> */}
+              </Link> }
+              
+              </div>
+              </div>
             </div>
           </div>
         </div>
-      </div>
-    </div>
-  )
-}
+      )
+    }
+   
+    
+
+*/
