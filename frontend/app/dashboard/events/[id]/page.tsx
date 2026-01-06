@@ -23,31 +23,10 @@ import { Input } from "@/components/ui/input"
 import { cn } from "@/lib/utils"
 import axios from "axios"
 import { CommentItem } from "@/components/event/CommentItem"
+import { ApiComment } from "@/types/apiComment"
+import { CommentWithReplies } from "@/types/commentWithReplies"
 
 const BackendURL = process.env.NEXT_PUBLIC_BACKEND_API_URL || "http://localhost:5000"
-
-// at top (replace static discussions)
-type ApiComment = {
-  _id: string
-  user_id: { name: string; profileIMG?: string }  // from populate
-  event_id: string
-  parent_comment_id?: string | null
-  content: string
-  likes: string[]            // array of user ids
-  createdAt: string
-}
-
-type CommentWithReplies = {
-  _id: string
-  user: { name: string; avatar?: string }
-  content: string
-  createdAt: string
-  likesCount: number
-  parent_comment_id?: string | null
-  replies: CommentWithReplies[]
-}
-
-
 
 export default function EventDetailPage() {
   const params = useParams<{ id: string }>()

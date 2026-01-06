@@ -15,31 +15,12 @@ import { EventCard } from "@/components/dashboard/event-card"
 import { cn } from "@/lib/utils"
 import axios from "axios"
 import Link from "next/link"
+import { Event } from "@/types/event"
 
 const BackendURL = process.env.NEXT_PUBLIC_BACKEND_API_URL
 
 const categories = ["All", "Technology", "Cultural", "Workshop", "Sports", "Business", "Art"]
 
-type Event = {
-  _id?: string
-  id: string
-  title: string
-  description: string
-  clubName: string
-  bannerURL?: string
-  category: "Workshop" | "Seminar" | "Social" | "Competition" | "Other"
-  venue: string
-  start_time: string
-  start_date: string | Date
-  end_time: string
-  end_date: string | Date
-  max_capacity: number
-  registeredCount: number
-  isClosed?: boolean
-  price?: number
-  isRegistered?: boolean
-  isAdmin?: boolean
-}
 
 export default function EventsPage() {
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid")
@@ -87,7 +68,7 @@ export default function EventsPage() {
             ...e,
             _id: eid,
             id: eid,
-            isRegistered: registeredEventIds.has(eid),
+            isRegistered: registeredEventIds.has(eid as string),
           }
         })
 
@@ -225,7 +206,7 @@ export default function EventsPage() {
           <EventCard
             {...{
               ...event,
-              _id: (event._id as string) || event.id,
+              _id: (event._id as string) || event.id as string,
             }}
           />
         </Link>

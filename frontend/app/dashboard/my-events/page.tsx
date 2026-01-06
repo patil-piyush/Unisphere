@@ -7,40 +7,10 @@ import { Badge } from "@/components/ui/badge"
 import { Calendar, Clock, MapPin, Download, CheckCircle2, XCircle } from "lucide-react"
 import Image from "next/image"
 import Link from "next/link"
-
+import { EventCard } from "@/types/eventCard"
+import { ApiRegistration } from "@/types/apiRegistration"
 
 const BACKEND_API_URL = process.env.NEXT_PUBLIC_BACKEND_API_URL
-
-type ApiRegistration = {
-  _id: string
-  attended?: boolean
-  certificateAvailable?: boolean
-  pointsEarned?: number
-  event_id: {
-    _id: string
-    title: string
-    start_date: string // ISO
-    end_date?: string   // ISO
-    start_time?: string
-    end_time?: string
-    venue?: string
-    bannerURL?: string
-  }
-}
-
-type EventCard = {
-  id: string
-  title: string
-  startDateISO: string
-  endDateISO?: string
-  dateLabel: string
-  timeLabel: string
-  location: string
-  image: string
-  attended?: boolean
-  certificateAvailable?: boolean
-  pointsEarned?: number
-}
 
 export default function MyEventsPage() {
   const [upcomingEvents, setUpcomingEvents] = useState<EventCard[]>([])

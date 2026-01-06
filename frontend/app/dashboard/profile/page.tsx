@@ -7,21 +7,10 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Badge } from "@/components/ui/badge"
 import Link from "next/link"
 import axios from "axios"
+import { User } from "@/types/user"
 
 const BackendURL = process.env.NEXT_PUBLIC_BACKEND_API_URL!
 
-type User = {
-  name: string
-  email: string
-  college_Name: string
-  department: string
-  year_of_study: number
-  interest?: string[]
-  profileIMG?: string
-  bannerIMG?: string
-  role: "student" | "clubMember" | "admin"
-  aboutMe?: string
-}
 
 export default function ProfilePage() {
   const [user, setUser] = useState<User | null>(null)
@@ -31,7 +20,6 @@ export default function ProfilePage() {
   const [rank, setRank] = useState("")
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
-  const [isEditing, setIsEditing] = useState(false)
 
 
 
@@ -58,17 +46,11 @@ export default function ProfilePage() {
       })
 
     axios.get(`${BackendURL}/api/gamification/points/monthly`, { withCredentials: true })
-      .then((response) => setPoints(response.data.points.toString()))
-      .catch((error) => {
-        console.error("Error fetching user points!", error)
-      })
-
-    axios.get(`${BackendURL}/api/gamification/points/monthly`, { withCredentials: true })
       .then((response) => {
+        setPoints(response.data.points.toString())
         const badges = response.data.badges ?? [];
         setbadges(badges.length);
-      }
-      )
+      })
       .catch((error) => {
         console.error("Error fetching user points!", error)
       })

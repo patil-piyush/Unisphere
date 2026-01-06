@@ -11,35 +11,12 @@ import {
 } from "@/components/ui/select"
 import { LeaderboardTable } from "@/components/dashboard/leaderboard-table"
 import axios from "axios"
+import { ApiLeaderboardEntry } from "@/types/apiLeaderboardEntry"
+import { LeaderboardApiResponse } from "@/types/leaderboardApiResponse"
+import { LeaderboardEntry } from "@/types/leaderboardEntry"
 
 const BackendURL =
   process.env.NEXT_PUBLIC_BACKEND_API_URL || "http://localhost:5000"
-
-// MATCH API RESPONSE
-type ApiLeaderboardEntry = {
-  name: string
-  department?: string
-  profileIMG?: string
-  points: number
-  eventsCount: number
-  badgesCount: number
-}
-
-type LeaderboardApiResponse = {
-  month: number
-  year: number
-  leaderboard: ApiLeaderboardEntry[]
-}
-
-type LeaderboardEntry = {
-  rank: number
-  name: string
-  avatar: string
-  department: string
-  points: number
-  eventsAttended: number
-  badges: number
-}
 
 export default function LeaderboardPage() {
   const [filter, setFilter] = useState("all")

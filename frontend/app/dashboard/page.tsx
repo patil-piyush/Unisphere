@@ -16,6 +16,7 @@ import {
 import { Button } from "@/components/ui/button"
 import { StatsCard } from "@/components/dashboard/stats-card"
 import { EventCard } from "@/components/dashboard/event-card"
+import { Event } from "@/types/event"
 
 const BackendURL =
   process.env.NEXT_PUBLIC_BACKEND_API_URL || "http://localhost:5000"
@@ -25,26 +26,6 @@ const api = axios.create({
   withCredentials: true,
 })
 
-type Event = {
-  _id?: string
-  id?: string
-  title: string
-  description: string
-  clubName: string
-  bannerURL?: string
-  category: "Workshop" | "Seminar" | "Social" | "Competition" | "Other"
-  venue: string
-  start_time: string
-  start_date: string | Date
-  end_time: string
-  end_date: string | Date
-  max_capacity: number
-  registeredCount: number
-  isClosed?: boolean
-  price?: number
-  isRegistered?: boolean
-  isAdmin?: boolean
-}
 
 export default function DashboardPage() {
   const [username, setUsername] = useState("")

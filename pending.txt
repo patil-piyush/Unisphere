@@ -1,0 +1,10 @@
+1. cloudinary image deletion on changing the images
+2. token
+3. member
+4. event deletion should reflect everywhere 
+5. email service - sendgrid
+6. logo
+7. rank 
+8. badges
+
+

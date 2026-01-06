@@ -7,20 +7,11 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
+import { User } from "@/types/user"
 
 const BACKEND_API_URL = process.env.NEXT_PUBLIC_BACKEND_API_URL!
 
-type User = {
-    name: string
-    email: string
-    college_Name: string
-    department: string
-    year_of_study: number
-    interest?: string[]
-    profileIMG?: string
-    bannerIMG?: string
-    aboutMe?: string
-}
+
 
 export default function ProfileEditPage() {
     const router = useRouter()
