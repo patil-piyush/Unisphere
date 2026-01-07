@@ -89,6 +89,14 @@ const getUserProfile = async (req, res) => {
   }
 }
 
+const getPublicIdFromUrl = (url) => {
+  if (!url) return null;
+  const parts = url.split("/");
+  const fileName = parts.pop().split(".")[0];
+  const folderPath = parts.slice(parts.indexOf("upload") + 1).join("/");
+  return `${folderPath}/${fileName}`;
+};
+
 // update user profile
 const updateUserProfile = async (req, res) => {
   try {
@@ -98,6 +106,12 @@ const updateUserProfile = async (req, res) => {
     }
 
     const updates = {};
+
+    // 🔽 ADDED: fetch existing user (for old images)
+    const existingUser = await User.findById(userId);
+    if (!existingUser) {
+      return res.status(404).json({ message: "User not found" });
+    }
 
     if (typeof req.body.name === "string") {
       updates.name = req.body.name.trim();
@@ -125,6 +139,14 @@ const updateUserProfile = async (req, res) => {
       Array.isArray(req.files.profileIMG) &&
       req.files.profileIMG[0]
     ) {
+      // 🔽 ADDED: delete old profile image
+      if (existingUser.profileIMG) {
+        const publicId = getPublicIdFromUrl(existingUser.profileIMG);
+        if (publicId) {
+          await cloudinary.uploader.destroy(publicId);
+        }
+      }
+
       const file = req.files.profileIMG[0];
       const profileUrl = await uploadBufferToCloudinary(file, "users/profile");
       updates.profileIMG = profileUrl;
@@ -136,6 +158,14 @@ const updateUserProfile = async (req, res) => {
       Array.isArray(req.files.bannerIMG) &&
       req.files.bannerIMG[0]
     ) {
+      // 🔽 ADDED: delete old banner image
+      if (existingUser.bannerIMG) {
+        const publicId = getPublicIdFromUrl(existingUser.bannerIMG);
+        if (publicId) {
+          await cloudinary.uploader.destroy(publicId);
+        }
+      }
+
       const file = req.files.bannerIMG[0];
       const bannerUrl = await uploadBufferToCloudinary(file, "users/banner");
       updates.bannerIMG = bannerUrl;

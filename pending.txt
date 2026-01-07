@@ -1,4 +1,4 @@
-1. cloudinary image deletion on changing the images
+1. cloudinary image deletion on changing the images (user-done)
 2. token
 3. member
 4. event deletion should reflect everywhere 
