@@ -172,9 +172,11 @@ export default function ClubDetailPage(props: { params: Promise<{ id: string }> 
               <MessageSquare className="mr-2 h-4 w-4" />
               Send Message
             </Button>
-            <Button variant="outline">
-              <Settings className="mr-2 h-4 w-4" />
-              Edit Club
+            <Button variant="outline" asChild>
+              <Link href={`/admin/clubs/${id}/edit`}>
+                <Settings className="mr-2 h-4 w-4" />
+                Edit Club
+              </Link>
             </Button>
           </div>
 

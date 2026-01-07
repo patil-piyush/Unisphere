@@ -8,3 +8,6 @@
 8. badges
 
 
+frontend - 
+1. edit club - admin
+
