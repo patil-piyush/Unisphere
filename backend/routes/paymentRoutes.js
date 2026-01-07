@@ -1,10 +1,22 @@
-// const express = require("express");
-// const clubAuth = require("../middlewares/clubAuthMiddleware");
-// const { createPaymentOrder, verifyEventPayment } = require("../controllers/PaymentController");
+const express = require("express");
+const clubAuth = require("../middlewares/clubAuthMiddleware");
+const { registerForEvent, verifyEventPayment, razorpayWebhook } = require("../controllers/eventRegistrationController");
 
-// const router = express.Router();
+const router = express.Router();
 
-// router.post("/events/:eventId/payment/create-order", clubAuth, createPaymentOrder);
-// router.post("/events/:eventId/payment/verify", clubAuth, verifyEventPayment);
+// Create Razorpay order (for paid event enrollment)
+router.post("/events/:eventId/payment/create-order", clubAuth, async (req, res) => {
+  req.params.eventId = req.params.eventId;
+  return registerForEvent(req, res);
+});
 
-// module.exports = router;
+// Verify payment and grant seat
+router.post("/events/:eventId/payment/verify", clubAuth, async (req, res) => {
+  req.body.eventId = req.params.eventId;
+  return verifyEventPayment(req, res);
+});
+
+// Webhook for async confirmation (keep this, don't remove)
+router.post("/webhooks/razorpay", express.json({ limit: "10mb" }), razorpayWebhook);
+
+module.exports = router;
