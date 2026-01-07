@@ -90,70 +90,66 @@ const getUserProfile = async (req, res) => {
 }
 
 // update user profile
+
 const updateUserProfile = async (req, res) => {
   try {
-    const userId = req.userId; // set in userAuthMiddleware
+    const userId = req.userId;
     if (!userId) {
       return res.status(401).json({ message: "Unauthorized" });
     }
 
     const updates = {};
 
-    if (typeof req.body.name === "string") {
-      updates.name = req.body.name.trim();
-    }
-
-    if (typeof req.body.aboutMe === "string") {
-      updates.aboutMe = req.body.aboutMe.trim();
-    }
-
-    if (typeof req.body.year_of_study === "string") {
-      updates.year_of_study = req.body.year_of_study.trim();
-    }
-
-    if (typeof req.body.interest === "string") {
-      const interestArray = req.body.interest
-        .split(",")
-        .map((s) => s.trim())
-        .filter(Boolean);
-      updates.interest = interestArray;
-    }
-
-    // profile image -> Cloudinary
-    if (
-      req.files &&
-      Array.isArray(req.files.profileIMG) &&
-      req.files.profileIMG[0]
-    ) {
-      const file = req.files.profileIMG[0];
-      const profileUrl = await uploadBufferToCloudinary(file, "users/profile");
-      updates.profileIMG = profileUrl;
-    }
-
-    // banner image -> Cloudinary
-    if (
-      req.files &&
-      Array.isArray(req.files.bannerIMG) &&
-      req.files.bannerIMG[0]
-    ) {
-      const file = req.files.bannerIMG[0];
-      const bannerUrl = await uploadBufferToCloudinary(file, "users/banner");
-      updates.bannerIMG = bannerUrl;
-    }
-
-    const updated = await User.findByIdAndUpdate(userId, updates, {
-      new: true,
-    }).select("-password");
-
-    if (!updated) {
+    const user = await User.findById(userId);
+    if (!user) {
       return res.status(404).json({ message: "User not found" });
     }
 
-    res.status(200).json({ message: "profile updated", user: updated });
+    if (req.files?.profileIMG?.[0]) {
+      // delete old profile image
+      if (user.profileIMG?.public_id) {
+        await cloudinary.uploader.destroy(user.profileIMG.public_id);
+      }
+
+      const file = req.files.profileIMG[0];
+      const uploaded = await uploadBufferToCloudinary(file, "users/profile");
+
+      updates.profileIMG = {
+        url: uploaded.url,
+        public_id: uploaded.public_id,
+      };
+    }
+
+    if (req.files?.bannerIMG?.[0]) {
+      // delete old banner image
+      if (user.bannerIMG?.public_id) {
+        await cloudinary.uploader.destroy(user.bannerIMG.public_id);
+      }
+
+      const file = req.files.bannerIMG[0];
+      const uploaded = await uploadBufferToCloudinary(file, "users/banner");
+
+      updates.bannerIMG = {
+        url: uploaded.url,
+        public_id: uploaded.public_id,
+      };
+    }
+
+    const updatedUser = await User.findByIdAndUpdate(
+      userId,
+      updates,
+      { new: true, runValidators: true }
+    ).select("-password");
+
+    res.status(200).json({
+      message: "Profile updated",
+      user: updatedUser,
+    });
   } catch (error) {
-    res.status(400).json({ message: error.message });
+    res.status(500).json({ message: error.message });
   }
 };
+
 
 // update password
 const updateUserPassword = async (req, res) => {
