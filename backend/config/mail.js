@@ -1,14 +1,8 @@
-const nodemailer = require('nodemailer');
+const Mailjet = require("node-mailjet");
 
-// Create a transporter object using SMTP transport
-const transporter = nodemailer.createTransport({
-    service: 'gmail',
-    auth: {
-        user: process.env.MAIL_USER,
-        pass: process.env.MAIL_PASS
-    },
-});
+const mailjet = Mailjet.apiConnect(
+  process.env.MJ_APIKEY_PUBLIC,
+  process.env.MJ_APIKEY_PRIVATE
+);
 
-module.exports = transporter;
-
-// send confirmation email  
+module.exports = mailjet;
