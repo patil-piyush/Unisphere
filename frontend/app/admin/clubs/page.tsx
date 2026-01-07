@@ -8,53 +8,16 @@ import { ClubCard } from "@/components/dashboard/club-card"
 import { useState, useEffect } from "react"
 import axios from "axios"
 import Link from "next/link"
+import { useClubsStore } from "@/stores/useClubsStore"
 const BackendURL = process.env.NEXT_PUBLIC_BACKEND_API_URL;
 
 
-const clu = [
-  {
-    id: "1",
-    name: "Tech Club",
-    description: "Exploring latest technologies and innovations",
-    image: "/placeholder.svg?height=200&width=300",
-    members: 145,
-    events: 12,
-    category: "Technology",
-  },
-  {
-    id: "2",
-    name: "Cultural Committee",
-    description: "Celebrating diversity and cultural exchange",
-    image: "/placeholder.svg?height=200&width=300",
-    members: 98,
-    events: 8,
-    category: "Cultural",
-  },
-  {
-    id: "3",
-    name: "Sports Committee",
-    description: "Organizing sports events and competitions",
-    image: "/placeholder.svg?height=200&width=300",
-    members: 203,
-    events: 15,
-    category: "Sports",
-  },
-]
-
 export default function ClubsPage() {
-
-  const [clubs, setClubs] = useState<Array<{
-    id: string;
-    name: string;
-    description: string;
-    image: string;
-    members: number;
-    events: number;
-    category: string;
-  }>>([]);
-
+  const { clubs, setClubs } = useClubsStore()
 
   useEffect(() => {
+    if (!BackendURL) return
+
     axios
       .get(`${BackendURL}/api/admin/`, { withCredentials: true })
       .then((response) => {
@@ -68,13 +31,13 @@ export default function ClubsPage() {
           events: c.eventsCount ?? 0,
           category: c.category || "Other",
         }))
+        console.log("Fetched Active Clubs:", mapped)
         setClubs(mapped)
       })
       .catch((error) => {
         console.error("Error fetching Active Clubs:", error)
       })
-  }, [clubs])
-
+  }, [clubs.length, setClubs])
 
 
   return (

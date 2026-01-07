@@ -45,6 +45,7 @@ const superAdminLinks = [
   { icon: LayoutDashboard, label: "Dashboard", href: "/admin" },
   { icon: Users, label: "Clubs", href: "/admin/clubs" },
   { icon: Calendar, label: "Events", href: "/admin/events" },
+  { icon: Calendar, label: "Event Approval", href: "/admin/approvals" },
   { icon: BarChart3, label: "Analytics", href: "/admin/analytics" },
   { icon: DollarSign, label: "Budget", href: "/admin/budget" },
   { icon: Flag, label: "Reports", href: "/admin/reports" },
