@@ -89,67 +89,101 @@ const getUserProfile = async (req, res) => {
   }
 }
 
-// update user profile
+const getPublicIdFromUrl = (url) => {
+  if (!url) return null;
+  const parts = url.split("/");
+  const fileName = parts.pop().split(".")[0];
+  const folderPath = parts.slice(parts.indexOf("upload") + 1).join("/");
+  return `${folderPath}/${fileName}`;
+};
 
+// update user profile
 const updateUserProfile = async (req, res) => {
   try {
-    const userId = req.userId;
+    const userId = req.userId; // set in userAuthMiddleware
     if (!userId) {
       return res.status(401).json({ message: "Unauthorized" });
     }
 
     const updates = {};
 
-    const user = await User.findById(userId);
-    if (!user) {
+    // 🔽 ADDED: fetch existing user (for old images)
+    const existingUser = await User.findById(userId);
+    if (!existingUser) {
       return res.status(404).json({ message: "User not found" });
     }
 
-    if (req.files?.profileIMG?.[0]) {
-      // delete old profile image
-      if (user.profileIMG?.public_id) {
-        await cloudinary.uploader.destroy(user.profileIMG.public_id);
+    if (typeof req.body.name === "string") {
+      updates.name = req.body.name.trim();
+    }
+
+    if (typeof req.body.aboutMe === "string") {
+      updates.aboutMe = req.body.aboutMe.trim();
+    }
+
+    if (typeof req.body.year_of_study === "string") {
+      updates.year_of_study = req.body.year_of_study.trim();
+    }
+
+    if (typeof req.body.interest === "string") {
+      const interestArray = req.body.interest
+        .split(",")
+        .map((s) => s.trim())
+        .filter(Boolean);
+      updates.interest = interestArray;
+    }
+
+    // profile image -> Cloudinary
+    if (
+      req.files &&
+      Array.isArray(req.files.profileIMG) &&
+      req.files.profileIMG[0]
+    ) {
+      // 🔽 ADDED: delete old profile image
+      if (existingUser.profileIMG) {
+        const publicId = getPublicIdFromUrl(existingUser.profileIMG);
+        if (publicId) {
+          await cloudinary.uploader.destroy(publicId);
+        }
       }
 
       const file = req.files.profileIMG[0];
-      const uploaded = await uploadBufferToCloudinary(file, "users/profile");
-
-      updates.profileIMG = {
-        url: uploaded.url,
-        public_id: uploaded.public_id,
-      };
+      const profileUrl = await uploadBufferToCloudinary(file, "users/profile");
+      updates.profileIMG = profileUrl;
     }
 
-    if (req.files?.bannerIMG?.[0]) {
-      // delete old banner image
-      if (user.bannerIMG?.public_id) {
-        await cloudinary.uploader.destroy(user.bannerIMG.public_id);
+    // banner image -> Cloudinary
+    if (
+      req.files &&
+      Array.isArray(req.files.bannerIMG) &&
+      req.files.bannerIMG[0]
+    ) {
+      // 🔽 ADDED: delete old banner image
+      if (existingUser.bannerIMG) {
+        const publicId = getPublicIdFromUrl(existingUser.bannerIMG);
+        if (publicId) {
+          await cloudinary.uploader.destroy(publicId);
+        }
       }
 
       const file = req.files.bannerIMG[0];
-      const uploaded = await uploadBufferToCloudinary(file, "users/banner");
-
-      updates.bannerIMG = {
-        url: uploaded.url,
-        public_id: uploaded.public_id,
-      };
+      const bannerUrl = await uploadBufferToCloudinary(file, "users/banner");
+      updates.bannerIMG = bannerUrl;
     }
 
-    const updatedUser = await User.findByIdAndUpdate(
-      userId,
-      updates,
-      { new: true, runValidators: true }
-    ).select("-password");
+    const updated = await User.findByIdAndUpdate(userId, updates, {
+      new: true,
+    }).select("-password");
 
-    res.status(200).json({
-      message: "Profile updated",
-      user: updatedUser,
-    });
+    if (!updated) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    res.status(200).json({ message: "profile updated", user: updated });
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    res.status(400).json({ message: error.message });
   }
 };
-
 
 // update password
 const updateUserPassword = async (req, res) => {
