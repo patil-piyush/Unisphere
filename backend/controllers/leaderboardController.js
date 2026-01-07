@@ -161,8 +161,6 @@ const getMonthlyLeaderboardRank = async (req, res) => {
     const monthNum = Number(month);
     const yearNum = Number(year);
 
-    console.log("RANK debug params:", { monthNum, yearNum, userId });
-
     const userEntry = await MonthlyPoints.findOne({
       user_id: userId,
       month: monthNum,
