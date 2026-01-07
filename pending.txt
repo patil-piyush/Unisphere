@@ -2,7 +2,7 @@
 2. token    |
 3. member   |
 4. event deletion should reflect everywhere (done)
-5. email service - sendgrid
+5. email service - sendgrid -> mailjet (done)
 6. logo 
 7. rank
 8. badges (fixed)
