@@ -1,11 +1,13 @@
 "use client"
 
-import { Users, Calendar, MessageSquare, Settings, ArrowLeft } from "lucide-react"
+import * as React from "react"
+import Image from "next/image"
+import { useClubsStore } from "@/stores/useClubsStore"
+import { ArrowLeft, MessageSquare, Settings } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import Link from "next/link"
-import { useEffect, useState } from "react"
 import axios from "axios"
 
 const BackendURL = process.env.NEXT_PUBLIC_BACKEND_API_URL
@@ -22,33 +24,48 @@ type ClubDetail = {
   president: { name: string; avatar: string }
 }
 
-export default function ClubDetailPage(props: { params: Promise<{ id: string }> }) {
-  const [clubDetail, setClubDetail] = useState<ClubDetail | null>(null)
-  const [recentMembers, setRecentMembers] = useState<
-    Array<{
-      id: string
-      name: string
-      role: string
-      joinedDate: Date
-    }>
-  >([])
+type Member = {
+  id: string
+  name: string
+  role: string
+  joinedDate: Date
+}
 
-  useEffect(() => {
-    let isMounted = true
+export default function ClubDetailPage(props: { params: Promise<{ id: string }> }) {
+  const clubs = useClubsStore((state) => state.clubs)
+
+  const { id } = React.use(props.params)
+
+  const [clubDetail, setClubDetail] = React.useState<ClubDetail | null>(null)
+  const [recentMembers, setRecentMembers] = React.useState<Member[]>([])
+
+  React.useEffect(() => {
+    let cancelled = false
 
     async function load() {
-      try {
-        const { id } = await props.params // unwrap params Promise [file:176]
-        if (!BackendURL) return
+      const fromStore = clubs.find((c) => c.id === id)
+      if (fromStore) {
+        setClubDetail({
+          ...fromStore,
+          founded: "",
+          president: {
+            name: "Unknown",
+            avatar: "/placeholder.svg?height=40&width=40",
+          },
+        })
+        return
+      }
 
+      if (!BackendURL) return
+
+      try {
         const res = await axios.get(
-          `${BackendURL}/api/admin/clubs/${id}`, // use real club route
+          `${BackendURL}/api/admin/clubs/${id}`,
           { withCredentials: true },
         )
-        if (!isMounted) return
+        if (cancelled) return
 
         const data = res.data
-        // normalize fields from backend (_id -> id, etc.)
         setClubDetail({
           id: data._id,
           name: data.name,
@@ -60,7 +77,9 @@ export default function ClubDetailPage(props: { params: Promise<{ id: string }> 
           founded: data.founded ?? "",
           president: {
             name: data.president?.name ?? "Unknown",
-            avatar: data.president?.avatar || "/placeholder.svg?height=40&width=40",
+            avatar:
+              data.president?.avatar ||
+              "/placeholder.svg?height=40&width=40",
           },
         })
       } catch (err) {
@@ -70,9 +89,9 @@ export default function ClubDetailPage(props: { params: Promise<{ id: string }> 
 
     load()
     return () => {
-      isMounted = false
+      cancelled = true
     }
-  }, [props.params])
+  }, [clubs, id])
 
   return (
     <div className="space-y-8">
@@ -83,16 +102,29 @@ export default function ClubDetailPage(props: { params: Promise<{ id: string }> 
         </Button>
       </Link>
 
-      {/* guard against null while loading */}
       {clubDetail && (
         <>
           <div className="glass bg-card/70 rounded-xl overflow-hidden border border-border/50">
-            <div className="h-64 bg-linear-to-r from-primary to-accent" />
+            {/* Club banner */}
+            <div className="relative h-64 w-full">
+              <Image
+                src={clubDetail.image}
+                alt={clubDetail.name}
+                fill
+                className="object-cover"
+              />
+              <div className="absolute inset-0 bg-linear-to-r from-black/40 to-black/10" />
+            </div>
+
             <div className="p-8">
               <div className="flex items-start justify-between mb-6">
                 <div>
-                  <h1 className="text-4xl font-bold mb-2">{clubDetail.name}</h1>
-                  <p className="text-muted-foreground">{clubDetail.description}</p>
+                  <h1 className="text-4xl font-bold mb-2">
+                    {clubDetail.name}
+                  </h1>
+                  <p className="text-muted-foreground">
+                    {clubDetail.description}
+                  </p>
                 </div>
                 <Badge>{clubDetail.category}</Badge>
               </div>
@@ -100,15 +132,21 @@ export default function ClubDetailPage(props: { params: Promise<{ id: string }> 
               <div className="grid grid-cols-3 gap-6 mb-6">
                 <div>
                   <p className="text-sm text-muted-foreground">Members</p>
-                  <p className="text-2xl font-bold">{clubDetail.members}</p>
+                  <p className="text-2xl font-bold">
+                    {clubDetail.members}
+                  </p>
                 </div>
                 <div>
                   <p className="text-sm text-muted-foreground">Events</p>
-                  <p className="text-2xl font-bold">{clubDetail.events}</p>
+                  <p className="text-2xl font-bold">
+                    {clubDetail.events}
+                  </p>
                 </div>
                 <div>
                   <p className="text-sm text-muted-foreground">Founded</p>
-                  <p className="text-2xl font-bold">{clubDetail.founded}</p>
+                  <p className="text-2xl font-bold">
+                    {clubDetail.founded}
+                  </p>
                 </div>
               </div>
 
@@ -118,8 +156,12 @@ export default function ClubDetailPage(props: { params: Promise<{ id: string }> 
                   <AvatarFallback>RS</AvatarFallback>
                 </Avatar>
                 <div>
-                  <p className="font-semibold">{clubDetail.president.name}</p>
-                  <p className="text-sm text-muted-foreground">Club President</p>
+                  <p className="font-semibold">
+                    {clubDetail.president.name}
+                  </p>
+                  <p className="text-sm text-muted-foreground">
+                    Club President
+                  </p>
                 </div>
               </div>
             </div>
@@ -130,9 +172,11 @@ export default function ClubDetailPage(props: { params: Promise<{ id: string }> 
               <MessageSquare className="mr-2 h-4 w-4" />
               Send Message
             </Button>
-            <Button variant="outline">
-              <Settings className="mr-2 h-4 w-4" />
-              Edit Club
+            <Button variant="outline" asChild>
+              <Link href={`/admin/clubs/${id}/edit`}>
+                <Settings className="mr-2 h-4 w-4" />
+                Edit Club
+              </Link>
             </Button>
           </div>
 
@@ -146,7 +190,9 @@ export default function ClubDetailPage(props: { params: Promise<{ id: string }> 
                 >
                   <div>
                     <p className="font-semibold">{member.name}</p>
-                    <p className="text-sm text-muted-foreground">{member.role}</p>
+                    <p className="text-sm text-muted-foreground">
+                      {member.role}
+                    </p>
                   </div>
                   <p className="text-xs text-muted-foreground">
                     {member.joinedDate.toLocaleDateString()}

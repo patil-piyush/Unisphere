@@ -181,10 +181,8 @@ export default function ApprovalsPage() {
 
       {/* Tabs */}
       <Tabs defaultValue="events" className="w-full">
-        <TabsList className="grid w-full grid-cols-3">
+        <TabsList className=" w-full">
           <TabsTrigger value="events">Pending Events</TabsTrigger>
-          <TabsTrigger value="clubs">Pending Clubs</TabsTrigger>
-          <TabsTrigger value="rejected">Rejected</TabsTrigger>
         </TabsList>
 
         {/* Pending Events Tab */}
@@ -245,72 +243,6 @@ export default function ApprovalsPage() {
                   <CheckCircle2 className="mr-2 h-4 w-4" />
                   {actionLoadingId === event.id ? "Approving..." : "Approve"}
                 </Button>
-              </div>
-            </div>
-          ))}
-        </TabsContent>
-
-        {/* Pending Clubs Tab (still static for now) */}
-        <TabsContent value="clubs" className="space-y-4 mt-4">
-          {pendingClubs.map((club) => (
-            <div
-              key={club.id}
-              className="glass bg-card/70 rounded-xl p-6 border border-border/50"
-            >
-              <div className="flex items-start justify-between mb-4">
-                <div className="flex-1">
-                  <div className="flex items-center gap-3 mb-2">
-                    <h3 className="text-xl font-bold">{club.name}</h3>
-                    <Badge variant="secondary">Club</Badge>
-                  </div>
-                  <p className="text-sm text-muted-foreground mb-3">
-                    Requested by {club.requestedBy}
-                  </p>
-                  <p className="text-sm mb-3">{club.description}</p>
-                  <p className="text-sm text-muted-foreground">
-                    {club.members} initial members
-                  </p>
-                </div>
-                <div className="text-right text-xs text-muted-foreground">
-                  <p>Submitted {club.submittedDate}</p>
-                </div>
-              </div>
-              <div className="flex gap-3">
-                <Button variant="outline" className="flex-1">
-                  <XCircle className="mr-2 h-4 w-4" />
-                  Reject
-                </Button>
-                <Button className="flex-1">
-                  <CheckCircle2 className="mr-2 h-4 w-4" />
-                  Approve
-                </Button>
-              </div>
-            </div>
-          ))}
-        </TabsContent>
-
-        {/* Rejected Tab (still static) */}
-        <TabsContent value="rejected" className="space-y-4 mt-4">
-          {rejectedRequests.map((request) => (
-            <div
-              key={request.id}
-              className="glass bg-card/70 rounded-xl p-6 border border-destructive/20"
-            >
-              <div className="flex items-start justify-between">
-                <div>
-                  <h3 className="font-bold mb-2">{request.name}</h3>
-                  <p className="text-sm text-muted-foreground mb-1">
-                    {request.type === "Event"
-                      ? `Club: ${request.club}`
-                      : `By: ${request.requestedBy}`}
-                  </p>
-                  <p className="text-sm text-destructive mt-2">
-                    Reason: {request.reason}
-                  </p>
-                </div>
-                <div className="text-xs text-muted-foreground">
-                  {request.rejectedDate}
-                </div>
               </div>
             </div>
           ))}

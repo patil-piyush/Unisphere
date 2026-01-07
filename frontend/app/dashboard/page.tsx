@@ -29,7 +29,7 @@ const api = axios.create({
 
 export default function DashboardPage() {
   const [username, setUsername] = useState("")
-  const [eventAttended, setEventAttended] = useState(0)
+  const [eventRegistered, setEventRegistered] = useState(0)
   const [points, setPoints] = useState(0)
   const [badges, setBadges] = useState(0)
   const [rank, setRank] = useState("")
@@ -69,7 +69,7 @@ export default function DashboardPage() {
 
         // registrations count
         const regsData = Array.isArray(regsRes.data) ? regsRes.data : []
-        setEventAttended(regsData.length)
+        setEventRegistered(regsData.length)
 
         // points + badges from same response
         const pointsVal = pointsRes.data.points ?? 0
@@ -121,8 +121,8 @@ export default function DashboardPage() {
   useEffect(() => {
     setStats([
       {
-        title: "Events Attended",
-        value: eventAttended,
+        title: "Events Registered",
+        value: eventRegistered,
         change: "+3 this month --- remaining",
         changeType: "positive",
         icon: Calendar,
@@ -130,8 +130,8 @@ export default function DashboardPage() {
       {
         title: "Total Points",
         value: points,
-        change: `${Number(points) >= 100 ? "Great job!" : "Keep going!"}`,
-        changeType: "positive",
+        change: `${Number(points) >= 100 ? "Great job!" : Number(points) < 10 ? "Attend some events dude..!":"Keep going!"}`,
+        changeType: `${Number(points) < 10 ? "negative" :"positive"}`,
         icon: Star,
       },
       {
@@ -153,7 +153,7 @@ export default function DashboardPage() {
         icon: Trophy,
       },
     ])
-  }, [eventAttended, points, badges, rank])
+  }, [eventRegistered, points, badges, rank])
 
   return (
     <div className="space-y-8">
@@ -361,7 +361,7 @@ export default function DashboardPage() {
 
 // export default function DashboardPage() {
 //   const [username, setUsername] = useState("")
-//   const [eventAttended, setEventAttended] = useState(0)
+//   const [eventRegistered, setEventRegistered] = useState(0)
 //   const [points, setPoints] = useState(0)
 //   const [badges, setBadges] = useState(0)
 //   const [rank, setRank] = useState("")
@@ -393,7 +393,7 @@ export default function DashboardPage() {
 //       .get(`${BackendURL}/api/event-registrations/my`, {
 //         withCredentials: true,
 //       })
-//       .then((response) => setEventAttended(response.data.length))
+//       .then((response) => setEventRegistered(response.data.length))
 //       .catch((error) => {
 //         console.error("User is not authenticated!", error)
 //         window.location.href = "/login"
@@ -477,7 +477,7 @@ export default function DashboardPage() {
 //     setStats([
 //       {
 //         title: "Events Attended",
-//         value: eventAttended,
+//         value: eventRegistered,
 //         change: "+3 this month --- remaining",
 //         changeType: "positive",
 //         icon: Calendar,
@@ -508,7 +508,7 @@ export default function DashboardPage() {
 //         icon: Trophy,
 //       },
 //     ])
-//   }, [eventAttended, points, badges, rank])
+//   }, [eventRegistered, points, badges, rank])
 
 //   return (
 //     <div className="space-y-8">
@@ -707,7 +707,7 @@ type Event = {
 
 export default function DashboardPage() {
   const [username, setUsername] = useState("")
-  const [eventAttended, setEventAttended] = useState(0)
+  const [eventRegistered, setEventRegistered] = useState(0)
   const [points, setPoints] = useState(0)
   const [badges, setbadges] = useState(0)
   const [rank, setRank] = useState("")
@@ -732,7 +732,7 @@ export default function DashboardPage() {
     // registrations (for stats)
     axios
       .get(`${BackendURL}/api/event-registrations/my`, { withCredentials: true })
-      .then((response) => setEventAttended(response.data.length))
+      .then((response) => setEventRegistered(response.data.length))
       .catch((error) => {
         console.error("User is not authenticated!", error)
         window.location.href = "/login"
@@ -811,7 +811,7 @@ export default function DashboardPage() {
     setStats([
       {
         title: "Events Attended",
-        value: eventAttended,
+        value: eventRegistered,
         change: "+3 this month --- remaining",
         changeType: "positive",
         icon: Calendar,
@@ -842,7 +842,7 @@ export default function DashboardPage() {
         icon: Trophy,
       },
     ])
-  }, [eventAttended, points, badges, rank])
+  }, [eventRegistered, points, badges, rank])
 
 
   return (

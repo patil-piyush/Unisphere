@@ -136,7 +136,7 @@ export default function EventDetailPage() {
       }
       
     fetchComments()
-  }, [eventId])
+  }, [eventId, isRegistered])
 
 
   if (loading) {
