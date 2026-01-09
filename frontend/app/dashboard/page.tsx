@@ -130,7 +130,7 @@ export default function DashboardPage() {
       {
         title: "Total Points",
         value: points,
-        change: `${Number(points) >= 100 ? "Great job!" : Number(points) < 10 ? "Attend some events dude..!":"Keep going!"}`,
+        change: `${Number(points) >= 100 ? "Great job!" : Number(points) < 10 ? "Zero event attended.!":"Keep going!"}`,
         changeType: `${Number(points) < 10 ? "negative" :"positive"}`,
         icon: Star,
       },

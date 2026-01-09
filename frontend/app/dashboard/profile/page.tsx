@@ -1,13 +1,23 @@
 "use client"
 
 import { useEffect, useState } from "react"
-import { Edit2, Mail, Calendar, Award, Star, Trophy } from "lucide-react"
+import {
+  Edit2,
+  Mail,
+  Calendar,
+  Award,
+  Star,
+  Trophy
+} from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Badge } from "@/components/ui/badge"
 import Link from "next/link"
 import axios from "axios"
 import { User } from "@/types/user"
+import { ApiBadge, ApiBadgesResponse, BadgeConfigEntry } from "@/types/badges"
+import { BadgesEarnedCard } from "@/components/dashboard/profile/BadgesEarnedCard"
+import { ProgressStreaksCard } from "@/components/dashboard/profile/ProgressStreaksCard"
 
 const BackendURL = process.env.NEXT_PUBLIC_BACKEND_API_URL!
 
@@ -16,27 +26,35 @@ export default function ProfilePage() {
   const [user, setUser] = useState<User | null>(null)
   const [eventsCount, setEventsCount] = useState<number>(0)
   const [points, setPoints] = useState(0)
-  const [badges, setbadges] = useState(0)
+  const [badgesCount, setBadgesCount] = useState(0)
   const [rank, setRank] = useState("")
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
+  const [stats, setStats] = useState<
+    Array<{
+      title: string
+      value: any
+    }>
+  >([])
 
+  const [earnedBadges, setEarnedBadges] = useState<ApiBadge[]>([])
 
-  const [stats, setStats] = useState<Array<{
-    title: string,
-    value: any,
-  }>>([])
-
-  const defaultBadges = [
-    { name: "Tech Enthusiast", icon: "🖥️", color: "bg-blue-500/10 text-blue-500" },
-    { name: "Event Regular", icon: "📅", color: "bg-green-500/10 text-green-500" },
-    { name: "Hackathon Winner", icon: "🏆", color: "bg-yellow-500/10 text-yellow-500" },
-    { name: "Early Bird", icon: "🐦", color: "bg-orange-500/10 text-orange-500" },
+  const monthlyBadgeConfig: BadgeConfigEntry[] = [
+    { name: "Newcomer", description: "Attended first event", requiredPoints: 10, isPermanent: false },
+    { name: "Explorer", description: "Active participant", requiredPoints: 30, isPermanent: false },
+    { name: "Learner", description: "Consistent event attendance", requiredPoints: 50, isPermanent: false },
+    { name: "Contributor", description: "Highly active in events", requiredPoints: 80, isPermanent: false },
+    { name: "Achiever", description: "Outstanding participation", requiredPoints: 120, isPermanent: false },
+    { name: "Leader", description: "Top performer of the month", requiredPoints: 160, isPermanent: false },
+    { name: "Star Student", description: "Elite level engagement", requiredPoints: 200, isPermanent: false },
+    { name: "Campus Icon", description: "Exceptional consistency", requiredPoints: 250, isPermanent: false },
+    { name: "UniSphere Elite", description: "Monthly legend", requiredPoints: 300, isPermanent: false },
+    { name: "UniSphere Champion", description: "Top-tier monthly achiever", requiredPoints: 350, isPermanent: false },
   ]
 
   useEffect(() => {
-
+    // events
     axios
       .get(`${BackendURL}/api/event-registrations/my`, { withCredentials: true })
       .then((response) => setEventsCount(response.data.length))
@@ -45,50 +63,57 @@ export default function ProfilePage() {
         window.location.href = "/login"
       })
 
-    axios.get(`${BackendURL}/api/gamification/points/monthly`, { withCredentials: true })
+    // points + monthly badges
+    axios
+      .get<ApiBadgesResponse>(`${BackendURL}/api/gamification/badges/me`, {
+        withCredentials: true,
+      })
       .then((response) => {
-        setPoints(response.data.points.toString())
-        const badges = response.data.badges ?? [];
-        setbadges(badges.length);
+        setPoints(response.data.points)
+        setEarnedBadges(response.data.badges || [])
+        setBadgesCount((response.data.badges || []).length)
       })
       .catch((error) => {
-        console.error("Error fetching user points!", error)
+        console.error("Error fetching user badges!", error)
       })
 
-
-    axios.get(`${BackendURL}/api/gamification/leaderboard/rank`, { withCredentials: true })
+    // rank
+    axios
+      .get(`${BackendURL}/api/gamification/leaderboard/rank`, {
+        withCredentials: true,
+      })
       .then((response) => setRank(response.data.rank.toString()))
       .catch((error) => {
-        console.error("Error fetching user points!", error)
+        console.error("Error fetching user rank!", error)
       })
+  }, [])
 
+  useEffect(() => {
     setStats([
       {
         title: "Events Attended",
-        value: eventsCount
+        value: eventsCount,
       },
       {
         title: "Points",
-        value: points
+        value: points,
       },
       {
         title: "Badges Earned",
-        value: badges
+        value: badgesCount,
       },
       {
         title: "Leaderboard Rank",
         value: rank,
       },
     ])
-
-  }, [eventsCount, points, badges, rank])
+  }, [eventsCount, points, badgesCount, rank])
 
   useEffect(() => {
     const fetchData = async () => {
       try {
         setLoading(true)
 
-        // fetch user profile
         const userRes = await fetch(`${BackendURL}/api/users/me`, {
           method: "GET",
           credentials: "include",
@@ -110,9 +135,10 @@ export default function ProfilePage() {
 
         const userData: User = await userRes.json()
         setUser(userData)
-
       } catch (err) {
-        setError(err instanceof Error ? err.message : "Failed to load profile.")
+        setError(
+          err instanceof Error ? err.message : "Failed to load profile."
+        )
       } finally {
         setLoading(false)
       }
@@ -140,7 +166,9 @@ export default function ProfilePage() {
     <div className="space-y-8">
       <div>
         <h1 className="text-3xl font-bold">My Profile</h1>
-        <p className="text-muted-foreground">Manage your profile and preferences</p>
+        <p className="text-muted-foreground">
+          Manage your profile and preferences
+        </p>
       </div>
 
       <div className="grid lg:grid-cols-3 gap-8">
@@ -207,23 +235,9 @@ export default function ProfilePage() {
             </div>
           </div>
 
-          {/* Badges (unchanged) */}
-          <div className="glass rounded-2xl p-6 mt-6">
-            <h3 className="font-semibold mb-4">Badges Earned</h3>
-            <div className="grid grid-cols-2 gap-3">
-              {defaultBadges.map((badge, index) => (
-                <div
-                  key={index}
-                  className={`rounded-xl p-3 text-center ${badge.color}`}
-                >
-                  <span className="text-2xl">{badge.icon}</span>
-                  <p className="text-xs font-medium mt-1">{badge.name}</p>
-                </div>
-              ))}
-            </div>
-          </div>
+          {/* Badges from backend */}
+          <BadgesEarnedCard earnedBadges={earnedBadges} />
         </div>
-
 
         {/* Stats & Details */}
         <div className="lg:col-span-2 space-y-6">
@@ -231,22 +245,37 @@ export default function ProfilePage() {
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             <div className="glass rounded-2xl p-4 text-center">
               <Calendar className="h-6 w-6 mx-auto text-primary mb-2" />
-              <p className="text-2xl font-bold">{stats.find(stat => stat.title === "Events Attended")?.value || 0}</p>
+              <p className="text-2xl font-bold">
+                {stats.find((stat) => stat.title === "Events Attended")?.value ||
+                  0}
+              </p>
               <p className="text-sm text-muted-foreground">Events</p>
             </div>
             <div className="glass rounded-2xl p-4 text-center">
               <Star className="h-6 w-6 mx-auto text-yellow-500 mb-2" />
-              <p className="text-2xl font-bold">{stats.find(stat => stat.title === "Points")?.value.toLocaleString() || 0}</p>
+              <p className="text-2xl font-bold">
+                {(
+                  stats.find((stat) => stat.title === "Points")?.value || 0
+                ).toLocaleString()}
+              </p>
               <p className="text-sm text-muted-foreground">Points</p>
             </div>
             <div className="glass rounded-2xl p-4 text-center">
               <Award className="h-6 w-6 mx-auto text-green-500 mb-2" />
-              <p className="text-2xl font-bold">{stats.find(stat => stat.title === "Badges Earned")?.value || 0}</p>
+              <p className="text-2xl font-bold">
+                {stats.find((stat) => stat.title === "Badges Earned")?.value ||
+                  0}
+              </p>
               <p className="text-sm text-muted-foreground">Badges</p>
             </div>
             <div className="glass rounded-2xl p-4 text-center">
               <Trophy className="h-6 w-6 mx-auto text-orange-500 mb-2" />
-              <p className="text-2xl font-bold">#{stats.find(stat => stat.title != "Leaderboard Rank")?.value - 1 || "Unranked"}</p>
+              <p className="text-2xl font-bold">
+                #
+                {stats.find(
+                  (stat) => stat.title === "Leaderboard Rank"
+                )?.value || "Unranked"}
+              </p>
               <p className="text-sm text-muted-foreground">Rank</p>
             </div>
           </div>
@@ -255,7 +284,8 @@ export default function ProfilePage() {
           <div className="glass rounded-2xl p-6">
             <h3 className="font-semibold mb-3">About Me</h3>
             <p className="text-muted-foreground">
-              {user.aboutMe || "Tell others about yourself by editing your profile."}
+              {user.aboutMe ||
+                "Tell others about yourself by editing your profile."}
             </p>
           </div>
 
@@ -277,13 +307,12 @@ export default function ProfilePage() {
             )}
           </div>
 
-          {/* Activity Chart Placeholder */}
-          <div className="glass rounded-2xl p-6">
-            <h3 className="font-semibold mb-4">Event Activity</h3>
-            <div className="h-48 flex items-center justify-center text-muted-foreground">
-              <p>Activity chart coming soon...</p>
-            </div>
-          </div>
+          {/* Progress + Streaks */}
+          <ProgressStreaksCard
+            points={points}
+            eventsCount={eventsCount}
+            monthlyBadgeConfig={monthlyBadgeConfig}
+          />
         </div>
       </div>
     </div>

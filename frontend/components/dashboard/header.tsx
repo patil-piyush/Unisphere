@@ -10,6 +10,7 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { Menu, LogOut, Settings } from "lucide-react"
 import { ThemeToggle } from "@/components/theme-toggle"
+import Link from "next/link"
 
 const BACKEND_API_URL = process.env.NEXT_PUBLIC_BACKEND_API_URL
 
@@ -77,7 +78,9 @@ export function DashboardHeader({ onMenuClick }: DashboardHeaderProps) {
             align="end"
             suppressHydrationWarning
           >
-            <DropdownMenuItem>Profile</DropdownMenuItem>
+            <Link href="/dashboard/profile">
+              <DropdownMenuItem>Profile</DropdownMenuItem>
+            </Link>
             <DropdownMenuItem>Settings</DropdownMenuItem>
             <DropdownMenuItem
               className="text-red-600"
