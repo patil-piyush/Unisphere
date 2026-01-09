@@ -1,12 +1,11 @@
-const Event = require('../models/Event')
-const EventRegistration = require('../models/EventRegistration')
-const EventWaitlist = require('../models/EventWaitlist')
-const transporter = require('../config/mail')
+const Event = require("../models/Event");
+const EventRegistration = require("../models/EventRegistration");
+const EventWaitlist = require("../models/EventWaitlist");
+const transporter = require("../config/mail");
 const cloudinary = require("../config/cloudinary");
 const EVENT_STATUS = require("../config/eventStatus");
 
-const Comment = require("../models/Comment")
-
+const Comment = require("../models/Comment");
 
 // create a new event president only
 // const createEvent = async (req, res) => {
@@ -150,7 +149,7 @@ const createEvent = async (req, res) => {
           (error, result) => {
             if (error) return reject(error);
             resolve(result.secure_url);
-          },
+          }
         );
         stream.end(req.file.buffer);
       });
@@ -183,7 +182,6 @@ const createEvent = async (req, res) => {
   }
 };
 
-
 // update event details both president and members
 const updateEvent = async (req, res) => {
   try {
@@ -197,21 +195,20 @@ const updateEvent = async (req, res) => {
 
     // Authorization: Only this club can update its event
     if (event.club_id.toString() !== req.clubId.toString()) {
-      return res.status(403).json({ error: "Unauthorized to update this event" });
+      return res
+        .status(403)
+        .json({ error: "Unauthorized to update this event" });
     }
 
     // Update event
-    const updatedEvent = await Event.findByIdAndUpdate(
-      eventId,
-      req.body,
-      { new: true }
-    );
+    const updatedEvent = await Event.findByIdAndUpdate(eventId, req.body, {
+      new: true,
+    });
 
     res.status(200).json({
       message: "Event Updated Successfully",
-      event: updatedEvent
+      event: updatedEvent,
     });
-
   } catch (error) {
     console.error("Create event error:", error);
     // If it's a Mongoose validation error, send 400 with details
@@ -222,11 +219,9 @@ const updateEvent = async (req, res) => {
     }
     res.status(500).json({ error: error.message || "Failed to create event" });
   }
-
 };
 
-
-// delete event president only 
+// delete event president only
 const deleteEvent = async (req, res) => {
   try {
     const eventId = req.params.id;
@@ -240,7 +235,9 @@ const deleteEvent = async (req, res) => {
     // Ensure req.clubId exists and is a string
     console.log("req.clubId =", req.clubId, "event.club_id =", event.club_id);
     if (event.club_id.toString() !== req.clubId.toString()) {
-      return res.status(403).json({ error: "Unauthorized to delete this event" });
+      return res
+        .status(403)
+        .json({ error: "Unauthorized to delete this event" });
     }
 
     // Make sure these models are imported and spelled correctly
@@ -252,7 +249,7 @@ const deleteEvent = async (req, res) => {
 
     return res.status(200).json({ message: "Event Deleted Successfully" });
   } catch (error) {
-    console.error("Delete event error:", error);  // <-- see exact cause in server logs
+    console.error("Delete event error:", error); // <-- see exact cause in server logs
     return res.status(500).json({ error: error.message });
   }
 };
@@ -267,16 +264,14 @@ const closeRegistration = async (req, res) => {
       return res.status(403).json({ error: "Not your event" });
     }
 
-    event.isClosed = true;    // <-- FIXED
+    event.isClosed = true; // <-- FIXED
     await event.save();
 
     res.status(200).json({ message: "Event Registrations Closed" });
-
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
 };
-
 
 //reopen registration
 
@@ -289,21 +284,22 @@ const openRegistration = async (req, res) => {
       return res.status(403).json({ error: "Not your event" });
     }
 
-    event.isClosed = false;   // <-- FIXED
+    event.isClosed = false; // <-- FIXED
     await event.save();
 
     res.status(200).json({ message: "Event Registrations Opened" }); // <-- FIXED MESSAGE
-
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
 };
 
-// get all events 
+// get all events
 const getAllEvents = async (req, res) => {
   try {
+    const now = new Date();
     const events = await Event.find({
-      status: EVENT_STATUS.APPROVED
+      status: EVENT_STATUS.APPROVED,
+      end_date: { $gte: now },
     })
       .populate("club_id", "name logoURL")
       .sort({ start_time: 1 });
@@ -314,13 +310,16 @@ const getAllEvents = async (req, res) => {
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
-}
+};
 
 //get event of logged-in clubs
 const getClubEvents = async (req, res) => {
   try {
-    const events = await Event.find({ club_id: req.clubId })
-      .sort({ start_time: 1 });
+    const now = new Date();
+    const events = await Event.find({
+      club_id: req.clubId,
+      end_date: { $gte: now },
+    }).sort({ start_time: 1 });
 
     if (!events) return res.status(404).json({ message: "No Events Found" });
 
@@ -328,8 +327,8 @@ const getClubEvents = async (req, res) => {
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
-}
-// get registrations of an event 
+};
+// get registrations of an event
 const getEventRegistrations = async (req, res) => {
   try {
     const event = await Event.findById(req.params.id);
@@ -339,8 +338,9 @@ const getEventRegistrations = async (req, res) => {
       return res.status(403).json({ message: "Not your event" });
     }
 
-    const registrations = await EventRegistration.find({ event_id: event._id })
-      .populate("user_id", "name email college_Name department");
+    const registrations = await EventRegistration.find({
+      event_id: event._id,
+    }).populate("user_id", "name email college_Name department");
 
     const waitlist = await EventWaitlist.find({ event_id: event._id })
       .populate("user_id", "name email college_Name department")
@@ -355,8 +355,10 @@ const getEventRegistrations = async (req, res) => {
 // get event by id public
 const getEventById = async (req, res) => {
   try {
-    const event = await Event.findById(req.params.id)
-      .populate("club_id", "name logoURL");
+    const event = await Event.findById(req.params.id).populate(
+      "club_id",
+      "name logoURL"
+    );
 
     if (!event) return res.status(404).json({ message: "Event not found" });
 
@@ -371,32 +373,23 @@ const getCurrentMonthEventCount = async (req, res) => {
     const now = new Date();
 
     // Start of current month
-    const startOfMonth = new Date(
-      now.getFullYear(),
-      now.getMonth(),
-      1
-    );
+    const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
 
     // Start of next month
-    const endOfMonth = new Date(
-      now.getFullYear(),
-      now.getMonth() + 1,
-      1
-    );
+    const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 1);
 
     const count = await Event.countDocuments({
       start_date: {
         $gte: startOfMonth,
-        $lt: endOfMonth
-      }
+        $lt: endOfMonth,
+      },
     });
 
     res.status(200).json({
       month: now.toLocaleString("default", { month: "long" }),
       year: now.getFullYear(),
-      count
+      count,
     });
-
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
@@ -412,5 +405,5 @@ module.exports = {
   getClubEvents,
   getEventRegistrations,
   getEventById,
-  getCurrentMonthEventCount
-}
+  getCurrentMonthEventCount,
+};
