@@ -39,6 +39,7 @@ const adminLogin = async (req, res) => {
     const adminToken = jwt.sign(
       {
         //id: user._id,
+        id: "rootAdmin",
         role: "admin",
         type: "admin"
       },
