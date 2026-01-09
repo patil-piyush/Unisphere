@@ -64,6 +64,10 @@ export default function AdminDashboard() {
       })
       .catch((error) => {
         console.error("Error fetching Total Students:", error)
+        // if unauthorized, send to login
+        if (error?.response?.status === 401) {
+          window.location.href = "/login"
+        }
       })
 
     // active clubs

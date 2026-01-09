@@ -44,6 +44,7 @@ const clubAdminLinks = [
 const superAdminLinks = [
   { icon: LayoutDashboard, label: "Dashboard", href: "/admin" },
   { icon: Users, label: "Clubs", href: "/admin/clubs" },
+  { icon: Users, label: "Users", href: "/admin/users" },
   { icon: Calendar, label: "Events", href: "/admin/events" },
   { icon: Calendar, label: "Event Approval", href: "/admin/approvals" },
   { icon: BarChart3, label: "Analytics", href: "/admin/analytics" },
@@ -129,14 +130,14 @@ export function DashboardSidebar({ role = "student" }) {
         </button>
       </div>
 
-      <Button
+      {/* <Button
         variant="ghost"
         size="icon"
         className="absolute -right-4 top-20 w-8 h-8 rounded-full bg-card border border-border shadow-md"
         onClick={() => setIsCollapsed(!isCollapsed)}
       >
         {isCollapsed ? <ChevronRight className="h-4 w-4" /> : <ChevronLeft className="h-4 w-4" />}
-      </Button>
+      </Button> */}
     </aside>
   )
 }
