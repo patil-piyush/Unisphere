@@ -74,11 +74,11 @@ const loginClub = async (req, res) => {
     );
 
     // ===== COOKIE SET HERE =====
-    res.cookie("token", clubToken, {
+    res.cookie("clubToken", clubToken, {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
       sameSite: "none", // Adjust based on your frontend domain x sameSite = "Strict",
-      maxAge: 7 * 24 * 60 * 60 * 1000 // 7 days
+      maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
     });
 
     res.status(200).json({ message: "Club login successful" });

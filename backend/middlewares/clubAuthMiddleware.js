@@ -2,11 +2,12 @@ const jwt = require("jsonwebtoken");
 
 module.exports = (req, res, next) => {
   try {
-    const token = req.cookies.token;
+    const clubToken = req.cookies.clubToken;
 
-    if (!token) return res.status(401).json({ message: "Unauthorized: No token" });
+    if (!clubToken)
+      return res.status(401).json({ message: "Unauthorized: No token" });
 
-    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    const decoded = jwt.verify(clubToken, process.env.JWT_SECRET);
 
     if (decoded.role !== "president" || decoded.type !== "club") {
       return res.status(403).json({ message: "Forbidden: Club access only" });

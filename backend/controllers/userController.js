@@ -63,11 +63,11 @@ const loginUser = async (req, res) => {
 
     const userToken = jwt.sign({ id: user._id }, process.env.JWT_SECRET, { expiresIn: '7d' });
 
-    res.cookie('token', userToken, {
+    res.cookie("userToken", userToken, {
       httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'none', // Adjust based on your frontend domain x sameSite = "Strict",
-      maxAge:  24 * 60 * 60 * 1000 // 1 days 
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "none", // Adjust based on your frontend domain x sameSite = "Strict",
+      maxAge: 24 * 60 * 60 * 1000, // 1 days
     });
 
     res.status(200).json({ message: "Login successful" });
