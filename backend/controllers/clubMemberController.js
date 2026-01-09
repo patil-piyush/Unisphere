@@ -2,24 +2,32 @@ const ClubMember = require("../models/ClubMember");
 const Club = require("../models/Club");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
+const User = require("../models/User")
 
 // Club adds member
 const addClubMember = async (req, res) => {
   try {
-    const { name, email, role } = req.body;
-    const clubId = req.clubId;  
+    //name, email, password, college_Name, department, year_of_study,club_id,position_in_club
+    const { name, email,college_Name, department, year_of_study, password , position_in_club} = req.body;
+    const clubId = req.clubId;
 
     if (!clubId) {
       return res.status(401).json({ message: "Club ID not found on request" });
     }
-    const exists = await ClubMember.findOne({ email });
-    if (exists) return res.status(400).json({ message: "Member already exists" });
+    const exists = await User.findOne({ email });
+    if (exists)
+      return res.status(400).json({ message: "Member already exists" });
 
-    const member = await ClubMember.create({
+    const member = await User.create({
       name,
       email,
-      club_id:clubId,
-      role: role || "member"
+      club_id: clubId,
+      role: "clubMember",
+      college_Name,
+      department,
+      year_of_study,
+      position_in_club,
+      password: await bcrypt.hash(password, 10),
     });
 
     res.status(201).json({ message: "Member added successfully", member });
@@ -29,43 +37,43 @@ const addClubMember = async (req, res) => {
 };
 
 // Member login (email + club password)
-const loginClubMember = async (req, res) => {
-  try {
-    const { email, password } = req.body;
+// const loginClubMember = async (req, res) => {
+//   try {
+//     const { email, password } = req.body;
 
-    const member = await ClubMember.findOne({ email });
-    if (!member) return res.status(404).json({ message: "Member not found" });
+//     const member = await User.findOne({ email });
+//     if (!member) return res.status(404).json({ message: "Member not found" });
 
-    const club = await Club.findById(member.club_id);
-    if (!club) return res.status(404).json({ message: "Club not found" });
+//     const club = await Club.findById(member.club_id);
+//     if (!club) return res.status(404).json({ message: "Club not found" });
 
-    const valid = await bcrypt.compare(password, club.password);
-    if (!valid) return res.status(401).json({ message: "Invalid credentials" });
+//     const valid = await bcrypt.compare(password, club.password);
+//     if (!valid) return res.status(401).json({ message: "Invalid credentials" });
 
-    const token = jwt.sign(
-      {
-        memberId: member._id,
-        clubId: member.club_id,
-        role: member.role,
-        type: "member"
-      },
-      process.env.JWT_SECRET,
-      { expiresIn: "7d" }
-    );
+//     const token = jwt.sign(
+//       {
+//         memberId: member._id,
+//         clubId: member.club_id,
+//         role: member.role,
+//         type: "member"
+//       },
+//       process.env.JWT_SECRET,
+//       { expiresIn: "7d" }
+//     );
 
-    res.cookie("token", token, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-      sameSite: "none", // Adjust based on your frontend domain x sameSite = "Strict",
-      maxAge: 7 * 24 * 60 * 60 * 1000
-    });
+//     res.cookie("token", token, {
+//       httpOnly: true,
+//       secure: process.env.NODE_ENV === "production",
+//       sameSite: "none", // Adjust based on your frontend domain x sameSite = "Strict",
+//       maxAge: 7 * 24 * 60 * 60 * 1000
+//     });
 
-    res.status(200).json({ message: "Member login successful" });
+//     res.status(200).json({ message: "Member login successful" });
 
-  } catch (error) {
-    res.status(400).json({ error: error.message });
-  }
-};
+//   } catch (error) {
+//     res.status(400).json({ error: error.message });
+//   }
+// };
 
 // // Get all members of logged-in club
 // const getClubMembers = async (req, res) => {
@@ -126,7 +134,7 @@ const logoutClubMember = (req, res) => {
 
 module.exports = {
   addClubMember,
-  loginClubMember,
+  // loginClubMember,
   getClubMembers,
   removeClubMember,
   logoutClubMember

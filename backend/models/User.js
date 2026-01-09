@@ -46,6 +46,16 @@ const userSchema = new mongoose.Schema({
     permanentBadges: {
         type: mongoose.Schema.Types.ObjectId,
         ref: "Badge"
+    },
+    club_id: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "Club",
+        default: null
+    },
+    position_in_club: {
+        type: String,
+        enum: ['President', 'Vice President', 'Secretary', 'Technical Lead','Web Master','Visual Media Member','Public Relation Member', null],
+        default: null
     }
 }, { timestamps: true });
 
