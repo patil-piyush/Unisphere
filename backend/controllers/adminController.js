@@ -47,11 +47,11 @@ const adminLogin = async (req, res) => {
     );
 
     // 5️⃣ Set cookie
-    res.cookie("token", adminToken, {
+    res.cookie("adminToken", adminToken, {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
       sameSite: "none", // Adjusted for cross-site requests x sameSite: "Strict"
-      maxAge: 24 * 60 * 60 * 1000 // 1 day
+      maxAge: 24 * 60 * 60 * 1000, // 1 day
     });
 
     res.status(200).json({ message: "Admin login successful" });
