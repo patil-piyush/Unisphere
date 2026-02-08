@@ -23,6 +23,9 @@ const adminEventsRoutes = require("./routes/adminEventsRoutes");
 // Leaderboard related routes
 const gamificationRoutes = require("./routes/gamificationRoutes");
 
+//certificate related routes
+const certificateRoutes = require("./routes/certificate");
+
 // crons
 const {startRejectedEventCleanup} = require("./crons/rejectedEventCleanup");
 require("./crons/gamificationCron");
@@ -72,6 +75,9 @@ app.use("/api/gamification", gamificationRoutes);
 
 //payment routes
 // app.use("/api", paymentRoutes);
+
+//certificate routes
+app.use("/api/certificates", certificateRoutes);
 
 //swagger setup
 app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerDocument));
